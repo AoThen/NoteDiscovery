@@ -800,9 +800,17 @@ function noteApp() {
             // Links [text](url)
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<span class="md-link">[$1]</span><span class="md-link-url">($2)</span>');
             
-            // Lists
-            html = html.replace(/^(\s*)([-*+])\s/gm, '$1<span class="md-list">$2</span> ');
-            html = html.replace(/^(\s*)(\d+\.)\s/gm, '$1<span class="md-list">$2</span> ');
+            // Lists - use [ \t] instead of \s to avoid matching newlines
+            // Capture rest of line to handle empty bullets properly (issue #142)
+            html = html.replace(/^(\s*)([-*+])[ \t](.*)$/gm, (match, indent, bullet, rest) => {
+                // If rest is empty/whitespace-only, add zero-width space to prevent line collapse
+                const content = rest.trim() === '' ? '\u200B' : rest;
+                return `${indent}<span class="md-list">${bullet}</span> ${content}`;
+            });
+            html = html.replace(/^(\s*)(\d+\.)[ \t](.*)$/gm, (match, indent, bullet, rest) => {
+                const content = rest.trim() === '' ? '\u200B' : rest;
+                return `${indent}<span class="md-list">${bullet}</span> ${content}`;
+            });
             
             // Blockquotes
             html = html.replace(/^(&gt;.*)$/gm, '<span class="md-blockquote">$1</span>');
@@ -5095,6 +5103,18 @@ function noteApp() {
             };
             
             window.history.pushState({ homepageFolder: '' }, '', '/');
+        },
+        
+        // Mobile files/home tab - context-aware behavior
+        mobileFilesTabClick() {
+            if (this.currentNote || this.currentImage || this.showGraph) {
+                // Viewing content → go home
+                this.goHome();
+            } else {
+                // On homepage → toggle files sidebar
+                this.activePanel = 'files';
+                this.mobileSidebarOpen = !this.mobileSidebarOpen;
+            }
         },
         
         // ==================== GRAPH VIEW ====================
