@@ -6,21 +6,30 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       contents: read
       packages: write # 必须授权以推送镜像
-    env:
-      REPO_NAME: ${{ github.repository }}
-      DOCKERHUB_USERNAME: aothen
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
 
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 0
+          keep_minimum_runs: 3
+
       - name: 设置小写镜像名称和版本
         run: |
-          LOWER_NAME=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
+          CONTAINER_NAME="${{ github.event.repository.name }}"
+          echo "CONTAINER_NAME=$CONTAINER_NAME" >> $GITHUB_ENV
+          LOWER_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           echo "LOWER_NAME=$LOWER_NAME" >> $GITHUB_ENV
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
       - name: 登录到 GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -52,7 +61,7 @@ jobs:
 
       - uses: actions/delete-package-versions@v5
         with: 
-          package-name: ${{ env.LOWER_NAME }}
+          package-name: ${{ env.CONTAINER_NAME }}
           package-type: 'container'
-          min-versions-to-keep: 3
+          min-versions-to-keep: 2
           delete-only-untagged-versions: 'true'
