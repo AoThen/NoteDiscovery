@@ -262,6 +262,12 @@ function noteApp() {
         shareLinkCopied: false,
         _sharedNotePaths: new Set(),  // O(1) lookup for shared note indicators
         
+        // Quick Switcher state (Ctrl+Alt+P)
+        showQuickSwitcher: false,
+        quickSwitcherQuery: '',
+        quickSwitcherIndex: 0,
+        quickSwitcherResults: [],
+        
         // Homepage state
         selectedHomepageFolder: '',
         _homepageCache: {
@@ -567,6 +573,13 @@ function noteApp() {
                     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
                         e.preventDefault();
                         this.saveNote();
+                    }
+                    
+                    // Ctrl/Cmd + Alt + P for Quick Switcher
+                    if ((e.ctrlKey || e.metaKey) && e.altKey && e.code === 'KeyP') {
+                        e.preventDefault();
+                        this.openQuickSwitcher();
+                        return;
                     }
                     
                     // Ctrl/Cmd + Alt/Option + N for new note
@@ -1709,28 +1722,108 @@ function noteApp() {
             this.folderTree = tree;
         },
         
+        // =====================================================================
+        // DATA-ATTRIBUTE BASED HANDLERS
+        // These read path/name/type from data-* attributes, avoiding JS escaping issues
+        // =====================================================================
+        
+        // Escape strings for HTML attributes (simpler than JS escaping)
+        escapeHtmlAttr(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        },
+        
+        // Folder handlers - read from dataset
+        handleFolderClick(el) {
+            this.toggleFolder(el.dataset.path);
+        },
+        handleFolderDragStart(el, event) {
+            this.onFolderDragStart(el.dataset.path, event);
+        },
+        handleFolderDragOver(el, event) {
+            event.preventDefault();
+            this.dragOverFolder = el.dataset.path;
+            el.classList.add('drag-over');
+        },
+        handleFolderDragLeave(el) {
+            this.dragOverFolder = null;
+            el.classList.remove('drag-over');
+        },
+        handleFolderDrop(el, event) {
+            event.stopPropagation();
+            el.classList.remove('drag-over');
+            this.onFolderDrop(el.dataset.path);
+        },
+        handleNewItemClick(el, event) {
+            event.stopPropagation();
+            this.dropdownTargetFolder = el.dataset.path;
+            this.toggleNewDropdown(event);
+        },
+        handleRenameFolderClick(el, event) {
+            event.stopPropagation();
+            this.renameFolder(el.dataset.path, el.dataset.name);
+        },
+        handleDeleteFolderClick(el, event) {
+            event.stopPropagation();
+            this.deleteFolder(el.dataset.path, el.dataset.name);
+        },
+        
+        // Item (note/image) handlers - read from dataset
+        handleItemClick(el) {
+            this.openItem(el.dataset.path, el.dataset.type);
+        },
+        handleItemDragStart(el, event) {
+            this.onNoteDragStart(el.dataset.path, event);
+        },
+        handleItemHover(el, isEnter) {
+            const path = el.dataset.path;
+            if (path !== this.currentNote && path !== this.currentImage) {
+                el.style.backgroundColor = isEnter ? 'var(--bg-hover)' : 'transparent';
+            }
+        },
+        handleDeleteItemClick(el, event) {
+            event.stopPropagation();
+            if (el.dataset.type === 'image') {
+                this.deleteImage(el.dataset.path);
+            } else {
+                this.deleteNote(el.dataset.path, el.dataset.name);
+            }
+        },
+        
+        // =====================================================================
+        // FOLDER TREE RENDERING
+        // =====================================================================
+        
         // Render folder recursively (helper for deep nesting)
+        // Uses data-* attributes to store path/name, avoiding JS string escaping issues
         renderFolderRecursive(folder, level = 0, isTopLevel = false) {
             if (!folder) return '';
             
             let html = '';
             const isExpanded = this.expandedFolders.has(folder.path);
+            const esc = (s) => this.escapeHtmlAttr(s); // Shorthand for HTML escaping
             
             // Render this folder's header
-            // Note: Using native event handlers (ondragstart, onclick, etc.) instead of Alpine directives
+            // Note: Using native event handlers with data-* attributes instead of Alpine directives
             // because x-html doesn't process Alpine directives in dynamically generated content
-            const escapedPath = folder.path.replace(/'/g, "\\'").replace(/\\/g, "\\\\");
             html += `
                 <div>
                     <div 
+                        data-path="${esc(folder.path)}"
+                        data-name="${esc(folder.name)}"
                         draggable="true"
-                        ondragstart="window.$root.onFolderDragStart('${escapedPath}', event)"
+                        ondragstart="window.$root.handleFolderDragStart(this, event)"
                         ondragend="window.$root.onFolderDragEnd()"
-                        ondragover="event.preventDefault(); window.$root.dragOverFolder = '${escapedPath}'; this.classList.add('drag-over')"
-                        ondragenter="event.preventDefault(); window.$root.dragOverFolder = '${escapedPath}'; this.classList.add('drag-over')"
-                        ondragleave="window.$root.dragOverFolder = null; this.classList.remove('drag-over')"
-                        ondrop="event.stopPropagation(); this.classList.remove('drag-over'); window.$root.onFolderDrop('${escapedPath}')"
-                        onclick="window.$root.toggleFolder('${escapedPath}')"
+                        ondragover="window.$root.handleFolderDragOver(this, event)"
+                        ondragenter="window.$root.handleFolderDragOver(this, event)"
+                        ondragleave="window.$root.handleFolderDragLeave(this)"
+                        ondrop="window.$root.handleFolderDrop(this, event)"
+                        onclick="window.$root.handleFolderClick(this)"
                         onmouseover="if(!window.$root.draggedNote && !window.$root.draggedFolder) this.style.backgroundColor='var(--bg-hover)'"
                         onmouseout="if(!window.$root.draggedNote && !window.$root.draggedFolder) this.style.backgroundColor='transparent'"
                         class="folder-item px-2 py-1 text-sm relative"
@@ -1746,25 +1839,30 @@ function noteApp() {
                                 </svg>
                             </button>
                             <span class="flex items-center gap-1 flex-1" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; pointer-events: none;">
-                                <span>${folder.name}</span>
+                                <span>${esc(folder.name)}</span>
                                 ${folder.notes.length === 0 && (!folder.children || Object.keys(folder.children).length === 0) ? `<span class="text-xs" style="color: var(--text-tertiary); font-weight: 400;">(${this.t('folders.empty')})</span>` : ''}
                             </span>
                         </div>
                         <div class="hover-buttons flex gap-1 transition-opacity absolute right-2 top-1/2 transform -translate-y-1/2" style="opacity: 0; pointer-events: none; background: linear-gradient(to right, transparent, var(--bg-hover) 20%, var(--bg-hover)); padding-left: 20px;" onclick="event.stopPropagation()">
                             <button 
-                                onclick="event.stopPropagation(); window.$root.dropdownTargetFolder = '${escapedPath}'; window.$root.toggleNewDropdown(event)"
+                                data-path="${esc(folder.path)}"
+                                onclick="window.$root.handleNewItemClick(this, event)"
                                 class="px-1.5 py-0.5 text-xs rounded hover:brightness-110"
                                 style="background-color: var(--bg-tertiary); color: var(--text-secondary);"
                                 title="Add item here"
                             >+</button>
                             <button 
-                                onclick="event.stopPropagation(); window.$root.renameFolder('${escapedPath}', '${folder.name.replace(/'/g, "\\'").replace(/\\/g, "\\\\")}')"
+                                data-path="${esc(folder.path)}"
+                                data-name="${esc(folder.name)}"
+                                onclick="window.$root.handleRenameFolderClick(this, event)"
                                 class="px-1.5 py-0.5 text-xs rounded hover:brightness-110"
                                 style="background-color: var(--bg-tertiary); color: var(--text-secondary);"
                                 title="Rename folder"
                             >✏️</button>
                             <button 
-                                onclick="event.stopPropagation(); window.$root.deleteFolder('${escapedPath}', '${folder.name.replace(/'/g, "\\'").replace(/\\/g, "\\\\")}')"
+                                data-path="${esc(folder.path)}"
+                                data-name="${esc(folder.name)}"
+                                onclick="window.$root.handleDeleteFolderClick(this, event)"
                                 class="px-1 py-0.5 text-xs rounded hover:brightness-110"
                                 style="color: var(--error);"
                                 title="Delete folder"
@@ -1806,32 +1904,26 @@ function noteApp() {
                         const shareIcon = isShared ? '<svg title="Shared" style="display: inline-block; width: 12px; height: 12px; vertical-align: middle; margin-right: 2px; opacity: 0.7;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>' : '';
                         const icon = isImage ? '🖼️' : '';
                         
-                        // Escape paths for use in native event handlers
-                        const escapedNotePath = note.path.replace(/'/g, "\\'").replace(/\\/g, "\\\\");
-                        const escapedNoteName = note.name.replace(/'/g, "\\'").replace(/\\/g, "\\\\");
-                        
-                        // Click handler
-                        const clickHandler = `window.$root.openItem('${escapedNotePath}', '${note.type}')`; 
-                        
-                        // Delete handler
-                        const deleteHandler = isImage
-                            ? `event.stopPropagation(); window.$root.deleteImage('${escapedNotePath}')`
-                            : `event.stopPropagation(); window.$root.deleteNote('${escapedNotePath}', '${escapedNoteName}')`; 
-                        
                         html += `
                             <div 
+                                data-path="${esc(note.path)}"
+                                data-name="${esc(note.name)}"
+                                data-type="${note.type}"
                                 draggable="true"
-                                ondragstart="window.$root.onNoteDragStart('${escapedNotePath}', event)"
+                                ondragstart="window.$root.handleItemDragStart(this, event)"
                                 ondragend="window.$root.onNoteDragEnd()"
-                                onclick="${clickHandler}"
+                                onclick="window.$root.handleItemClick(this)"
                                 class="note-item px-2 py-1 text-sm relative"
                                 style="${isCurrent ? 'background-color: var(--accent-light); color: var(--accent-primary);' : 'color: var(--text-primary);'} ${isImage ? 'opacity: 0.85;' : ''} cursor: pointer;"
-                                onmouseover="if('${escapedNotePath}' !== window.$root.currentNote && '${escapedNotePath}' !== window.$root.currentImage) this.style.backgroundColor='var(--bg-hover)'"
-                                onmouseout="if('${escapedNotePath}' !== window.$root.currentNote && '${escapedNotePath}' !== window.$root.currentImage) this.style.backgroundColor='transparent'"
+                                onmouseover="window.$root.handleItemHover(this, true)"
+                                onmouseout="window.$root.handleItemHover(this, false)"
                             >
-                                <span class="truncate" style="display: block; padding-right: 30px;">${shareIcon}${icon}${icon ? ' ' : ''}${note.name}</span>
+                                <span class="truncate" style="display: block; padding-right: 30px;">${shareIcon}${icon}${icon ? ' ' : ''}${esc(note.name)}</span>
                                 <button 
-                                    onclick="${deleteHandler}"
+                                    data-path="${esc(note.path)}"
+                                    data-name="${esc(note.name)}"
+                                    data-type="${note.type}"
+                                    onclick="window.$root.handleDeleteItemClick(this, event)"
                                     class="note-delete-btn absolute right-2 top-1/2 transform -translate-y-1/2 px-1 py-0.5 text-xs rounded hover:brightness-110 transition-opacity"
                                     style="opacity: 0; color: var(--error);"
                                     title="${isImage ? 'Delete image' : 'Delete note'}"
@@ -1985,21 +2077,52 @@ function noteApp() {
             event.preventDefault();
             this.dropTarget = 'editor';
             
-            // Update cursor position as user drags over text
+            // Focus the textarea
             const textarea = event.target;
-            const textLength = textarea.value.length;
+            if (textarea.tagName !== 'TEXTAREA') return;
             
-            // Calculate approximate cursor position based on mouse position
-            // This gives a rough idea of where the link will be inserted
             textarea.focus();
             
-            // Try to set cursor at click position (works in most browsers)
-            if (textarea.setSelectionRange && document.caretPositionFromPoint) {
-                const pos = document.caretPositionFromPoint(event.clientX, event.clientY);
-                if (pos && pos.offsetNode === textarea) {
-                    textarea.setSelectionRange(pos.offset, pos.offset);
-                }
+            // Calculate cursor position from mouse coordinates
+            const pos = this.getTextareaCursorFromPoint(textarea, event.clientX, event.clientY);
+            if (pos >= 0) {
+                textarea.setSelectionRange(pos, pos);
             }
+        },
+        
+        // Calculate textarea cursor position from mouse coordinates
+        getTextareaCursorFromPoint(textarea, x, y) {
+            const rect = textarea.getBoundingClientRect();
+            const style = window.getComputedStyle(textarea);
+            const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2;
+            const paddingTop = parseFloat(style.paddingTop) || 0;
+            const paddingLeft = parseFloat(style.paddingLeft) || 0;
+            
+            // Calculate which line we're on
+            const relativeY = y - rect.top - paddingTop + textarea.scrollTop;
+            const lineIndex = Math.max(0, Math.floor(relativeY / lineHeight));
+            
+            // Split content into lines
+            const lines = textarea.value.split('\n');
+            
+            // Find the character position at the start of this line
+            let charPos = 0;
+            for (let i = 0; i < Math.min(lineIndex, lines.length); i++) {
+                charPos += lines[i].length + 1; // +1 for newline
+            }
+            
+            // If we're beyond the last line, position at end
+            if (lineIndex >= lines.length) {
+                return textarea.value.length;
+            }
+            
+            // Approximate character position within the line based on X coordinate
+            const relativeX = x - rect.left - paddingLeft;
+            const charWidth = parseFloat(style.fontSize) * 0.6; // Approximate for monospace
+            const charInLine = Math.max(0, Math.floor(relativeX / charWidth));
+            const lineLength = lines[lineIndex]?.length || 0;
+            
+            return charPos + Math.min(charInLine, lineLength);
         },
         
         // Handle dragenter on editor
@@ -2047,9 +2170,11 @@ function noteApp() {
                 link = `[${noteName}](${encodedPath})`;
             }
             
-            // Insert at cursor position
+            // Insert at drop position
             const textarea = event.target;
-            const cursorPos = textarea.selectionStart || 0;
+            // Recalculate position from drop coordinates for accuracy
+            let cursorPos = this.getTextareaCursorFromPoint(textarea, event.clientX, event.clientY);
+            if (cursorPos < 0) cursorPos = textarea.selectionStart || 0;
             const textBefore = this.noteContent.substring(0, cursorPos);
             const textAfter = this.noteContent.substring(cursorPos);
             
@@ -2087,14 +2212,16 @@ function noteApp() {
             }
             
             const textarea = event.target;
-            const cursorPos = textarea.selectionStart || 0;
+            // Calculate cursor position from drop coordinates
+            let cursorPos = this.getTextareaCursorFromPoint(textarea, event.clientX, event.clientY);
+            if (cursorPos < 0) cursorPos = textarea.selectionStart || 0;
             
             // Upload each image
             for (const file of imageFiles) {
                 try {
                     const imagePath = await this.uploadImage(file, this.currentNote);
                     if (imagePath) {
-                        this.insertImageMarkdown(imagePath, file.name, cursorPos);
+                        await this.insertImageMarkdown(imagePath, file.name, cursorPos);
                     }
                 } catch (error) {
                     ErrorHandler.handle(`upload image ${file.name}`, error);
@@ -2128,7 +2255,7 @@ function noteApp() {
         
         // Insert image markdown at cursor position using wiki-style syntax
         // This ensures image links don't break when notes are moved
-        insertImageMarkdown(imagePath, altText, cursorPos) {
+        async insertImageMarkdown(imagePath, altText, cursorPos) {
             // Extract just the filename from the path (e.g., "folder/_attachments/image.png" -> "image.png")
             const filename = imagePath.split('/').pop();
             
@@ -2142,6 +2269,9 @@ function noteApp() {
                 ? `![[${filename}|${altWithoutExt}]]`
                 : `![[${filename}]]`;
             
+            // Reload notes FIRST to update image lookup maps before preview renders
+            await this.loadNotes();
+            
             const textBefore = this.noteContent.substring(0, cursorPos);
             const textAfter = this.noteContent.substring(cursorPos);
             
@@ -2149,9 +2279,6 @@ function noteApp() {
             
             // Trigger autosave
             this.autoSave();
-            
-            // Reload notes to show the new image in sidebar and update lookup maps
-            this.loadNotes();
         },
         
         // Handle paste event for clipboard images
@@ -2180,7 +2307,7 @@ function noteApp() {
                             
                             const imagePath = await this.uploadImage(file, this.currentNote);
                             if (imagePath) {
-                                this.insertImageMarkdown(imagePath, filename, cursorPos);
+                                await this.insertImageMarkdown(imagePath, filename, cursorPos);
                             }
                         } catch (error) {
                             ErrorHandler.handle('paste image', error);
@@ -5038,6 +5165,87 @@ function noteApp() {
         // Check if a note is currently shared (O(1) lookup)
         isNoteShared(notePath) {
             return this._sharedNotePaths.has(notePath);
+        },
+        
+        // ============================================
+        // Quick Switcher (Ctrl+Alt+P)
+        // ============================================
+        
+        openQuickSwitcher() {
+            this.showQuickSwitcher = true;
+            this.quickSwitcherQuery = '';
+            this.quickSwitcherIndex = 0;
+            // Populate initial results
+            this.quickSwitcherResults = (this.allNotes || []).slice(0, 10);
+            // Focus the input after the modal renders
+            this.$nextTick(() => {
+                const input = document.getElementById('quickSwitcherInput');
+                if (input) input.focus();
+            });
+        },
+        
+        closeQuickSwitcher() {
+            this.showQuickSwitcher = false;
+            this.quickSwitcherQuery = '';
+            this.quickSwitcherIndex = 0;
+        },
+        
+        // Filter notes for quick switcher based on query
+        filterQuickSwitcher(query) {
+            // Only include actual notes, not images
+            const notes = (this.notes || []).filter(n => n.type === 'note');
+            if (!query || !query.trim()) {
+                // Show recent notes when no query
+                return notes.slice(0, 10);
+            }
+            const q = query.toLowerCase();
+            return notes
+                .filter(n => 
+                    n.name.toLowerCase().includes(q) || 
+                    n.path.toLowerCase().includes(q)
+                )
+                .slice(0, 10);
+        },
+        
+        // Handle keyboard navigation in quick switcher
+        handleQuickSwitcherKeydown(e) {
+            const results = this.quickSwitcherResults;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.quickSwitcherIndex = Math.min(this.quickSwitcherIndex + 1, results.length - 1);
+                this.scrollQuickSwitcherIntoView();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.quickSwitcherIndex = Math.max(this.quickSwitcherIndex - 1, 0);
+                this.scrollQuickSwitcherIntoView();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const note = results[this.quickSwitcherIndex];
+                if (note) {
+                    this.loadNote(note.path);
+                    this.closeQuickSwitcher();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                this.closeQuickSwitcher();
+            }
+        },
+        
+        // Scroll selected item into view in quick switcher
+        scrollQuickSwitcherIntoView() {
+            this.$nextTick(() => {
+                const items = document.querySelectorAll('[data-quick-switcher-item]');
+                if (items[this.quickSwitcherIndex]) {
+                    items[this.quickSwitcherIndex].scrollIntoView({ block: 'nearest' });
+                }
+            });
+        },
+        
+        // Select note from quick switcher by click
+        selectQuickSwitcherNote(note) {
+            this.loadNote(note.path);
+            this.closeQuickSwitcher();
         },
         
         // Open share modal and fetch current share status
