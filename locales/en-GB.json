@@ -213,7 +213,8 @@
     "matches": "{{current}} of {{total}}",
     "match_of": "Match {{current}} of {{total}}",
     "result_singular": "result",
-    "result_plural": "results"
+    "result_plural": "results",
+    "no_results": "No notes contain \"{{query}}\""
   },
 
   "theme": {
@@ -274,7 +275,8 @@
 
   "support": {
     "enjoying_demo": "Support this project",
-    "deploy_own": "Deploy your own instance"
+    "deploy_own": "Deploy your own instance",
+    "thank_you": "Thank you for your support! 💚"
   },
 
   "demo": {

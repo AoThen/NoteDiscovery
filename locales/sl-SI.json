@@ -213,7 +213,8 @@
     "matches": "{{current}} od {{total}}",
     "match_of": "Zadetek {{current}} od {{total}}",
     "result_singular": "rezultat",
-    "result_plural": "rezultatov"
+    "result_plural": "rezultatov",
+    "no_results": "Nobena beležka ne vsebuje \"{{query}}\""
   },
 
   "theme": {
@@ -274,7 +275,8 @@
 
   "support": {
     "enjoying_demo": "Podprite ta projekt",
-    "deploy_own": "Namestite svojo instanco"
+    "deploy_own": "Namestite svojo instanco",
+    "thank_you": "Hvala za podporo! 💚"
   },
 
   "demo": {

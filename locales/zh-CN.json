@@ -213,7 +213,8 @@
     "matches": "{{current}} / {{total}}",
     "match_of": "第 {{current}} 个，共 {{total}} 个",
     "result_singular": "个结果",
-    "result_plural": "个结果"
+    "result_plural": "个结果",
+    "no_results": "没有笔记包含\"{{query}}\""
   },
 
   "theme": {
@@ -274,7 +275,8 @@
 
   "support": {
     "enjoying_demo": "支持此项目",
-    "deploy_own": "部署您自己的实例"
+    "deploy_own": "部署您自己的实例",
+    "thank_you": "感谢您的支持！💚"
   },
 
   "demo": {

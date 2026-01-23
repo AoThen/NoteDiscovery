@@ -1627,7 +1627,7 @@
                                 <svg class="w-12 h-12 mx-auto mb-3 opacity-40" style="color: var(--text-tertiary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <p class="text-sm" style="color: var(--text-tertiary);">No notes contain "<span x-text="searchQuery"></span>"</p>
+                                <p class="text-sm" style="color: var(--text-tertiary);" x-text="t('search.no_results', {query: searchQuery})"></p>
                             </div>
                         </template>
                         <template x-if="!searchQuery.trim()">
@@ -1860,8 +1860,8 @@
                     >
                                     notediscovery.com
                     </a>
-                    <!-- Ko-fi support link (demo mode only) -->
-                    <template x-if="demoMode">
+                    <!-- Ko-fi support link (hidden if ALREADY_DONATED=true) -->
+                    <template x-if="!alreadyDonated">
                         <div class="mt-3 flex flex-col gap-2 items-center">
                             <a 
                                 href="https://ko-fi.com/gamosoft" 
@@ -1882,6 +1882,22 @@
                             >
                                 <img src="https://www.pikapods.com/static/run-button.svg" alt="Run on PikaPods" style="height: 28px;">
                             </a>
+                            <!-- Link to hide these buttons -->
+                            <a 
+                                href="https://github.com/gamosoft/NoteDiscovery/blob/main/documentation/ENVIRONMENT_VARIABLES.md#support" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="text-[10px] opacity-50 hover:opacity-100 transition-opacity"
+                                style="color: var(--text-tertiary);"
+                            >
+                                hide these buttons
+                            </a>
+                        </div>
+                    </template>
+                    <!-- Thank you message (shown when ALREADY_DONATED=true) -->
+                    <template x-if="alreadyDonated">
+                        <div class="mt-3 text-[10px] opacity-50 hover:opacity-100 transition-opacity text-center" style="color: var(--text-tertiary);">
+                            <span x-text="t('support.thank_you')"></span>
                         </div>
                     </template>
                 </div>
