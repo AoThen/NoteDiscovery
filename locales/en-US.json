@@ -217,7 +217,8 @@
     "match_of": "Match {{current}} of {{total}}",
     "result_singular": "result",
     "result_plural": "results",
-    "no_results": "No notes contain \"{{query}}\""
+    "no_results": "No notes contain \"{{query}}\"",
+    "searching": "Searching for \"{{query}}\"..."
   },
 
   "theme": {
@@ -239,7 +240,9 @@
     "account": "Account",
     "logout": "Logout",
     "readable_line_length": "Readable line length",
-    "readable_line_length_desc": "Limit preview width for easier reading"
+    "readable_line_length_desc": "Limit preview width for easier reading",
+    "hide_underscore_folders": "Hide system folders",
+    "hide_underscore_folders_desc": "Hide _attachments, _templates and other underscore folders from sidebar"
   },
 
   "homepage": {

@@ -3,6 +3,7 @@
 // Configuration constants
 const CONFIG = {
     AUTOSAVE_DELAY: 1000,              // ms - Delay before triggering autosave
+    SEARCH_DEBOUNCE_DELAY: 500,        // ms - Delay before running note search while typing
     SAVE_INDICATOR_DURATION: 2000,     // ms - How long to show "saved" indicator
     SCROLL_SYNC_DELAY: 50,             // ms - Delay to prevent scroll sync interference
     SCROLL_SYNC_MAX_RETRIES: 10,       // Maximum attempts to find editor/preview elements
@@ -18,6 +19,7 @@ const LOCAL_SETTINGS = {
     readableLineLength: { key: 'readableLineLength', type: 'boolean', default: true },
     favoritesExpanded: { key: 'favoritesExpanded', type: 'boolean', default: true },
     tagsExpanded: { key: 'tagsExpanded', type: 'boolean', default: false },
+    hideUnderscoreFolders: { key: 'hideUnderscoreFolders', type: 'boolean', default: false },
     // Number settings with validation
     sidebarWidth: { key: 'sidebarWidth', type: 'number', default: CONFIG.DEFAULT_SIDEBAR_WIDTH, min: 200, max: 600 },
     editorWidth: { key: 'editorWidth', type: 'number', default: 50, min: 20, max: 80 },
@@ -209,6 +211,10 @@ function noteApp() {
         // Readable line length (preview max-width)
         readableLineLength: true,
         
+        // Hide underscore-prefixed folders (_attachments, _templates) from sidebar
+        // Read synchronously to prevent flash on initial render
+        hideUnderscoreFolders: localStorage.getItem('hideUnderscoreFolders') === 'true',
+        
         // Icon rail / panel state
         activePanel: 'files', // 'files', 'search', 'tags', 'settings'
         
@@ -223,6 +229,10 @@ function noteApp() {
         selectedTags: [],
         tagsExpanded: false,
         tagReloadTimeout: null, // For debouncing tag reloads
+
+        // Search state
+        searchDebounceTimeout: null,
+        isSearching: false,
         
         // Outline (TOC) state
         outline: [], // [{level: 1, text: 'Heading', slug: 'heading'}, ...]
@@ -584,45 +594,46 @@ function noteApp() {
             if (!window.__noteapp_shortcuts_initialized) {
                 window.__noteapp_shortcuts_initialized = true;
                 window.addEventListener('keydown', (e) => {
-                    // Use e.code for all letter keys for consistency across keyboard layouts
+                    // Use e.key (not e.code) for letter keys to support non-QWERTY keyboard layouts
                     
                     // Ctrl/Cmd + S to save
-                    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
+                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
                         e.preventDefault();
                         this.saveNote();
                     }
                     
                     // Ctrl/Cmd + Alt + P for Quick Switcher
-                    if ((e.ctrlKey || e.metaKey) && e.altKey && e.code === 'KeyP') {
+                    if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'p') {
                         e.preventDefault();
                         this.openQuickSwitcher();
                         return;
                     }
                     
                     // Ctrl/Cmd + Alt/Option + N for new note
-                    if ((e.ctrlKey || e.metaKey) && e.altKey && e.code === 'KeyN') {
+                    if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'n') {
                         e.preventDefault();
                         this.createNote();
                     }
                     
                     // Ctrl/Cmd + Alt/Option + F for new folder
-                    if ((e.ctrlKey || e.metaKey) && e.altKey && e.code === 'KeyF') {
+                    if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'f') {
                         e.preventDefault();
                         this.createFolder();
                     }
                     
                     // Ctrl/Cmd + Z for undo (without shift or alt)
-                    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.code === 'KeyZ') {
+                    // Use e.key instead of e.code to support non-QWERTY keyboard layouts
+                    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z') {
                         e.preventDefault();
                         this.undo();
                     }
                     
                     // Ctrl/Cmd + Y OR Ctrl/Cmd+Shift+Z for redo
-                    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY') {
+                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
                         e.preventDefault();
                         this.redo();
                     }
-                    if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.code === 'KeyZ') {
+                    if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z') {
                         e.preventDefault();
                         this.redo();
                     }
@@ -643,31 +654,31 @@ function noteApp() {
                     const isEditorFocused = document.activeElement?.id === 'note-editor';
                     if (isEditorFocused && this.currentNote) {
                         // Ctrl/Cmd + B for bold
-                        if ((e.ctrlKey || e.metaKey) && e.code === 'KeyB') {
+                        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
                             e.preventDefault();
                             this.wrapSelection('**', '**', 'bold text');
                         }
                         
                         // Ctrl/Cmd + I for italic
-                        if ((e.ctrlKey || e.metaKey) && e.code === 'KeyI') {
+                        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
                             e.preventDefault();
                             this.wrapSelection('*', '*', 'italic text');
                         }
                         
                         // Ctrl/Cmd + K for link
-                        if ((e.ctrlKey || e.metaKey) && e.code === 'KeyK') {
+                        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
                             e.preventDefault();
                             this.insertLink();
                         }
                         
                         // Ctrl/Cmd + Alt/Option + T for table
-                        if ((e.ctrlKey || e.metaKey) && e.altKey && e.code === 'KeyT') {
+                        if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 't') {
                             e.preventDefault();
                             this.insertTable();
                         }
                         
                         // Ctrl/Cmd + Alt/Option + Z for Zen mode
-                        if ((e.ctrlKey || e.metaKey) && e.altKey && e.code === 'KeyZ') {
+                        if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'z') {
                             e.preventDefault();
                             this.toggleZenMode();
                         }
@@ -804,6 +815,12 @@ function noteApp() {
         toggleReadableLineLength() {
             this.readableLineLength = !this.readableLineLength;
             localStorage.setItem('readableLineLength', this.readableLineLength);
+        },
+        
+        // Hide underscore folders toggle (hides _attachments, _templates, etc. from sidebar)
+        toggleHideUnderscoreFolders() {
+            this.hideUnderscoreFolders = !this.hideUnderscoreFolders;
+            localStorage.setItem('hideUnderscoreFolders', this.hideUnderscoreFolders);
         },
         
         // Update syntax highlight overlay (debounced, called on input)
@@ -1103,10 +1120,12 @@ function noteApp() {
                 
                 // Handle media files separately - build media lookup map
                 if (note.type !== 'note') {
-                    // Map filename (case-insensitive) to full path
+                    // Map filename WITH extension (case-insensitive) to full path
+                    // Use path to get filename with extension (note.name is stem without extension)
+                    const filenameWithExt = path.split('/').pop().toLowerCase();
                     // First match wins if there are duplicates
-                    if (!this._mediaLookup.has(nameLower)) {
-                        this._mediaLookup.set(nameLower, path);
+                    if (!this._mediaLookup.has(filenameWithExt)) {
+                        this._mediaLookup.set(filenameWithExt, path);
                     }
                     continue;
                 }
@@ -1418,6 +1437,7 @@ function noteApp() {
             
             // Case 1: No filters at all → show full folder tree
             if (!hasTextSearch && !hasTagFilter) {
+                this.isSearching = false;
                 this.searchResults = [];
                 this.currentSearchHighlight = '';
                 this.clearSearchHighlights();
@@ -1427,6 +1447,7 @@ function noteApp() {
             
             // Case 2: Only tag filter → convert to flat list of matching notes
             if (hasTagFilter && !hasTextSearch) {
+                this.isSearching = false;
                 this.searchResults = this.notes.filter(note => 
                     note.type === 'note' && this.noteMatchesTags(note)
                 );
@@ -1437,6 +1458,7 @@ function noteApp() {
             
             // Case 3: Text search (with or without tag filter)
             if (hasTextSearch) {
+                this.isSearching = true;
                 try {
                     const response = await fetch(`/api/search?q=${encodeURIComponent(this.searchQuery)}`);
                     const data = await response.json();
@@ -1461,6 +1483,9 @@ function noteApp() {
                     }
                 } catch (error) {
                     console.error('Search failed:', error);
+                    this.searchResults = [];
+                } finally {
+                    this.isSearching = false;
                 }
             }
         },
@@ -1849,9 +1874,7 @@ function noteApp() {
                         ondragleave="window.$root.handleFolderDragLeave(this)"
                         ondrop="window.$root.handleFolderDrop(this, event)"
                         onclick="window.$root.handleFolderClick(this)"
-                        onmouseover="if(!window.$root.draggedItem) this.style.backgroundColor='var(--bg-hover)'"
-                        onmouseout="if(!window.$root.draggedItem) this.style.backgroundColor='transparent'"
-                        class="folder-item px-2 py-1 text-sm relative"
+                        class="folder-item hover-accent px-2 py-1 text-sm relative"
                         style="color: var(--text-primary); cursor: pointer;"
                     >
                         <div class="flex items-center gap-1">
@@ -1906,9 +1929,9 @@ function noteApp() {
                 
                 // First, render child folders (if any)
                 if (folder.children && Object.keys(folder.children).length > 0) {
-                    const children = Object.entries(folder.children).sort((a, b) => 
-                        a[1].name.toLowerCase().localeCompare(b[1].name.toLowerCase())
-                    );
+                    const children = Object.entries(folder.children)
+                        .filter(([k, v]) => !this.hideUnderscoreFolders || !v.name.startsWith('_'))
+                        .sort((a, b) => a[1].name.toLowerCase().localeCompare(b[1].name.toLowerCase()));
                     
                     children.forEach(([childKey, childFolder]) => {
                         html += this.renderFolderRecursive(childFolder, 0, false);
@@ -3831,6 +3854,26 @@ function noteApp() {
         },
         
         // Search notes
+        debouncedSearchNotes() {
+            if (this.searchDebounceTimeout) {
+                clearTimeout(this.searchDebounceTimeout);
+            }
+
+            const hasTextSearch = this.searchQuery.trim().length > 0;
+            if (!hasTextSearch) {
+                this.isSearching = false;
+                this.searchNotes();
+                return;
+            }
+
+            this.isSearching = true;
+            this.searchResults = [];
+
+            this.searchDebounceTimeout = setTimeout(() => {
+                this.searchNotes();
+            }, CONFIG.SEARCH_DEBOUNCE_DELAY);
+        },
+
         // Search notes by text (calls unified filter logic)
         async searchNotes() {
             await this.applyFilters();

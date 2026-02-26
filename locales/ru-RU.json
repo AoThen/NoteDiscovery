@@ -216,7 +216,8 @@
     "match_of": "Результат {{current}} из {{total}}",
     "result_singular": "результат",
     "result_plural": "результатов",
-    "no_results": "Нет заметок с \"{{query}}\""
+    "no_results": "Нет заметок с \"{{query}}\"",
+    "searching": "Поиск \"{{query}}\"..."
   },
 
   "theme": {
@@ -238,7 +239,9 @@
     "account": "Аккаунт",
     "logout": "Выйти",
     "readable_line_length": "Удобная длина строки",
-    "readable_line_length_desc": "Ограничить ширину предпросмотра для удобства чтения"
+    "readable_line_length_desc": "Ограничить ширину предпросмотра для удобства чтения",
+    "hide_underscore_folders": "Скрыть системные папки",
+    "hide_underscore_folders_desc": "Скрыть _attachments, _templates и другие папки с подчёркиванием"
   },
 
   "homepage": {
