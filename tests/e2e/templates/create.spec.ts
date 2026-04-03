@@ -1,4 +1,4 @@
-import { test, expect, TEST_CONFIG, login, waitForAutosave, apiPost } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, waitForAutosave, apiPost, cleanupTest } from '../fixtures/test-helpers';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -25,6 +25,10 @@ test.describe('Template Functionality', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     ensureTemplatesDir();
+  });
+
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
   });
 
   test('template list displays correctly', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect, TEST_CONFIG, login, apiPost, waitForAutosave, waitForSearchDebounce } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, apiPost, waitForAutosave, waitForSearchDebounce, cleanupTest } from '../fixtures/test-helpers';
 
 async function openSearchPanel(page: import('@playwright/test').Page) {
   const iconRailButtons = page.locator('.icon-rail-btn');
@@ -21,13 +21,17 @@ test.describe('Search Functionality', () => {
     await login(page);
   });
 
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
+  });
+
   test('basic text search returns results', async ({ page, testPrefix }) => {
     const noteName = `${testPrefix}_searchable`;
     const uniqueTerm = `UniqueTerm${Date.now()}`;
 
     await createTestNote(page, noteName, `# Test Note\n\nThis contains ${uniqueTerm} for searching.`);
 
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
 
     await openSearchPanel(page);
 
@@ -36,7 +40,10 @@ test.describe('Search Functionality', () => {
 
     await searchInput.fill(uniqueTerm);
     await waitForSearchDebounce(page);
-    await page.waitForTimeout(500);
+    await page.waitForResponse(
+      resp => resp.url().includes('/api/search') && resp.status() === 200,
+      { timeout: 5000 }
+    ).catch(() => {});
 
     // Verify search results contain the note
     const pageContent = await page.content();
@@ -65,7 +72,7 @@ test.describe('Search Functionality', () => {
     const noteName = `${testPrefix}_clear_test`;
     await createTestNote(page, noteName, `Clearable content for test ${testPrefix}`);
 
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
 
     await openSearchPanel(page);
 
@@ -77,7 +84,7 @@ test.describe('Search Functionality', () => {
 
     // Clear the input
     await searchInput.fill('');
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay);
 
     const value = await searchInput.inputValue();
     expect(value).toBe('');
@@ -89,7 +96,7 @@ test.describe('Search Functionality', () => {
 
     await createTestNote(page, noteName, `# 中文笔记\n\n${chineseContent}`);
 
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
 
     await openSearchPanel(page);
 
@@ -98,7 +105,10 @@ test.describe('Search Functionality', () => {
 
     await searchInput.fill('中文');
     await waitForSearchDebounce(page);
-    await page.waitForTimeout(500);
+    await page.waitForResponse(
+      resp => resp.url().includes('/api/search') && resp.status() === 200,
+      { timeout: 5000 }
+    ).catch(() => {});
 
     // Verify search results contain the Chinese note
     const pageContent = await page.content();
@@ -111,14 +121,12 @@ test.describe('Search Functionality', () => {
 
     await createTestNote(page, noteName, `# Clickable Note\n\nContent: ${uniqueContent}`);
 
-    await page.reload();
-    await page.waitForTimeout(300);
+    await page.reload({ waitUntil: 'domcontentloaded' });
 
     // Open the note from sidebar
     const noteItem = page.locator(`text="${noteName}"`).first();
     await expect(noteItem).toBeVisible({ timeout: 5000 });
     await noteItem.click();
-    await page.waitForTimeout(500);
 
     // Verify editor is visible and contains the content
     const editor = page.locator('#note-editor');

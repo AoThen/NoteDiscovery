@@ -1,4 +1,4 @@
-import { test, expect, TEST_CONFIG, login, apiPost, waitForSearchIndex } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, apiPost, waitForSearchIndex, cleanupTest } from '../fixtures/test-helpers';
 
 const BASE_URL = TEST_CONFIG.baseUrl;
 
@@ -10,6 +10,10 @@ test.describe('Search Locate Feature', () => {
       }
     });
     await login(page);
+  });
+
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
   });
 
   test('search click on unopened note - with proper wait', async ({ page, testPrefix }) => {
@@ -29,14 +33,9 @@ Line 7: More content`;
 
     // Wait for search index to update
     await waitForSearchIndex(page);
-    
-    // Reload page to ensure note is indexed
-    await page.reload({ waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
 
-    // Go to homepage (close any open note)
-    await page.goto('/');
-    await page.waitForTimeout(1000);
+    // Reload page to ensure note is indexed
+    await page.reload({ waitUntil: 'domcontentloaded' });
 
     // Verify no note is currently open
     const noteCurrent = await page.evaluate(() => {

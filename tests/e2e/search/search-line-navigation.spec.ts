@@ -1,4 +1,4 @@
-import { test, expect, TEST_CONFIG, login, apiPost, waitForSearchDebounce } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, apiPost, waitForSearchDebounce, cleanupTest } from '../fixtures/test-helpers';
 
 const BASE_URL = TEST_CONFIG.baseUrl;
 
@@ -16,12 +16,19 @@ async function openSearchPanel(page: import('@playwright/test').Page) {
 
 async function createTestNote(page: import('@playwright/test').Page, noteName: string, content: string): Promise<void> {
   await apiPost(page, `${BASE_URL}/api/notes/${noteName}.md`, { content });
-  await page.waitForTimeout(200);
+  await page.waitForResponse(
+    resp => resp.url().includes('/api/notes/') && [200, 201].includes(resp.status()),
+    { timeout: 5000 }
+  ).catch(() => {});
 }
 
 test.describe('Search Line Navigation', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
+  });
+
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
   });
 
   test('clicking search result opens note and navigates to line', async ({ page, testPrefix }) => {

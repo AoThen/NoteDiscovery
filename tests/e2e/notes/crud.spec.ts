@@ -1,8 +1,12 @@
-import { test, expect, TEST_CONFIG, login, waitForAutosave } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, waitForAutosave, cleanupTest } from '../fixtures/test-helpers';
 
 test.describe('Notes CRUD', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
+  });
+
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
   });
 
   test('create new note from sidebar', async ({ page, testPrefix }) => {
@@ -20,7 +24,11 @@ test.describe('Notes CRUD', () => {
     
     await newNoteOption.click({ force: true });
 
-    await page.waitForSelector('#note-editor', { state: 'visible', timeout: 10000 });
+    // Wait for note creation API response
+    await page.waitForResponse(
+      resp => resp.url().includes('/api/notes/') && [200, 201].includes(resp.status()),
+      { timeout: 10000 }
+    ).catch(() => {});
 
     const editor = page.locator('#note-editor').first();
     await expect(editor).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
@@ -44,7 +52,11 @@ test.describe('Notes CRUD', () => {
 
     await newNoteOption.click({ force: true });
 
-    await page.waitForSelector('#note-editor', { state: 'visible', timeout: 10000 });
+    // Wait for note creation API response
+    await page.waitForResponse(
+      resp => resp.url().includes('/api/notes/') && [200, 201].includes(resp.status()),
+      { timeout: 10000 }
+    ).catch(() => {});
 
     const editor = page.locator('#note-editor').first();
     await editor.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
@@ -77,7 +89,11 @@ test.describe('Notes CRUD', () => {
 
     await newNoteOption.click({ force: true });
 
-    await page.waitForSelector('#note-editor', { state: 'visible', timeout: 10000 });
+    // Wait for note creation API response
+    await page.waitForResponse(
+      resp => resp.url().includes('/api/notes/') && [200, 201].includes(resp.status()),
+      { timeout: 10000 }
+    ).catch(() => {});
 
     const editor = page.locator('#note-editor').first();
     await expect(editor).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
@@ -108,12 +124,15 @@ test.describe('Notes CRUD', () => {
 
     await newNoteOption.click({ force: true });
 
-    await page.waitForSelector('#note-editor', { state: 'visible', timeout: 10000 });
+    // Wait for note creation API response
+    await page.waitForResponse(
+      resp => resp.url().includes('/api/notes/') && [200, 201].includes(resp.status()),
+      { timeout: 10000 }
+    ).catch(() => {});
 
     const noteItem = page.locator(`.note-item:has-text("${noteName}")`).first();
     await noteItem.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
     await noteItem.click({ button: 'right' });
-    await page.waitForTimeout(150);
 
     const deleteOption = page.locator('text=/Delete|删除/').first();
     if (await deleteOption.isVisible({ timeout: 2000 }).catch(() => false)) {
@@ -125,6 +144,10 @@ test.describe('Notes CRUD', () => {
       }
     }
 
-    await page.waitForTimeout(200);
+    // Wait for delete API response
+    await page.waitForResponse(
+      resp => resp.url().includes('/api/notes/') && resp.method() === 'DELETE' && [200, 204].includes(resp.status()),
+      { timeout: 5000 }
+    ).catch(() => {});
   });
 });

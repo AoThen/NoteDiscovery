@@ -1,13 +1,18 @@
-import { test, expect, TEST_CONFIG, login, apiPost, apiDelete } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, apiPost, apiDelete, cleanupTest } from '../fixtures/test-helpers';
 
 test.describe('Share Functionality', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
 
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
+  });
+
   async function createNoteViaAPI(page: import('@playwright/test').Page, noteName: string, content: string): Promise<void> {
     const notePath = `${noteName}.md`;
-    await apiPost(page, `${TEST_CONFIG.baseUrl}/api/notes/${notePath}`, { content });
+    const response = await apiPost(page, `${TEST_CONFIG.baseUrl}/api/notes/${notePath}`, { content });
+    expect(response.status()).toBe(200);
   }
 
   test('create share link via API', async ({ page, testPrefix }) => {

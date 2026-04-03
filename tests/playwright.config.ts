@@ -1,16 +1,35 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * Global teardown: clean up test data directory after all tests complete
+ */
+async function globalTeardown() {
+  const testDataDir = path.join(__dirname, 'e2e', 'fixtures', 'test-data');
+  try {
+    if (fs.existsSync(testDataDir)) {
+      fs.rmSync(testDataDir, { recursive: true, force: true });
+      console.log(`Cleaned up test data directory: ${testDataDir}`);
+    }
+  } catch (error) {
+    console.error('Failed to cleanup test data directory:', error);
+  }
+}
 
 /**
  * See https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: '../tests/e2e',
+  testDir: './e2e',
+  /* Global teardown to clean up test data */
+  globalTeardown: './e2e/fixtures/global-teardown.ts',
   /* Global timeout for entire test suite (15 min) */
   globalTimeout: 15 * 60 * 1000,
   /* Default timeout for each test action */
   timeout: 60 * 1000,
   /* Run tests in files in parallel */
-  fullyParallel: true,
+  fullyParallel: false, // Disabled for dependency order: auth -> CRUD -> search -> advanced
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
@@ -44,28 +63,14 @@ export default defineConfig({
           args: ['--no-sandbox', '--disable-setuid-sandbox']
         }
       },
+      // Test execution order: auth -> CRUD -> folders -> search -> share -> advanced features
+      dependencies: [],
     },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Uncomment for multi-browser testing */
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
   ],
+
+  /* Run tests in specific order for dependency management */
+  // Order controlled by test file naming and fullyParallel: false
+  // For CI, consider: npx playwright test --shard=1/3 auth/ notes/ search/
 
   /* Folder for test artifacts such as screenshots, videos, traces, etc. */
   outputDir: 'test-results/',

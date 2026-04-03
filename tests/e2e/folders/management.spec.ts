@@ -1,8 +1,12 @@
-import { test, expect, TEST_CONFIG, login, waitForAutosave } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, waitForAutosave, cleanupTest } from '../fixtures/test-helpers';
 
 test.describe('Folder Management', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
+  });
+
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
   });
 
   test('create new folder from sidebar', async ({ page, testPrefix }) => {

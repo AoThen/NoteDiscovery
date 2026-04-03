@@ -1,21 +1,9 @@
-import { test, expect, TEST_CONFIG, login, apiPost, waitForAutosave } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, apiPost, waitForAutosave, cleanupTest } from '../fixtures/test-helpers';
 
 const BASE_URL = TEST_CONFIG.baseUrl;
 
 /**
  * Search CJK (Chinese, Japanese, Korean) Support E2E Tests
- * 
- * Tests complete CJK search functionality including:
- * - Chinese character search (simplified)
- * - Chinese character search (traditional)
- * - Japanese Hiragana search
- * - Japanese Katakana search
- * - Korean Hangul search
- * - Mixed CJK search
- * - CJK partial match search
- * - CJK full-text search
- * - CJK search highlight
- * - CJK search navigation
  */
 
 async function openSearchPanel(page: import('@playwright/test').Page) {
@@ -35,6 +23,10 @@ async function openSearchPanel(page: import('@playwright/test').Page) {
 test.describe('Search CJK Support', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
+  });
+
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
   });
 
   test('search simplified Chinese characters', async ({ page, testPrefix }) => {

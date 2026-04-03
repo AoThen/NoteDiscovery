@@ -1,8 +1,12 @@
-import { test, expect, TEST_CONFIG, login, apiPost, waitForSearchDebounce } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, apiPost, waitForSearchDebounce, cleanupTest } from '../fixtures/test-helpers';
 
 test.describe('Search Index Real-time Updates', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
+  });
+
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
   });
 
   async function openSearchPanel(page: import('@playwright/test').Page) {

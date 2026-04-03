@@ -75,7 +75,7 @@ jobs:
         fi
 
     - name: Run Playwright tests
-      run: npx playwright test --config=config/playwright.config.ts
+      run: npx playwright test --config=tests/playwright.config.ts
 
     - name: Upload failed test screenshots
       if: failure()
@@ -83,8 +83,8 @@ jobs:
       with:
         name: playwright-failed-tests
         path: |
-          config/test-results/**/*.png
-          config/test-results/**/error.txt
+          tests/test-results/**/*.png
+          tests/test-results/**/error.txt
         retention-days: 7
         if-no-files-found: ignore
 

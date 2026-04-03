@@ -1,10 +1,14 @@
-import { test, expect, TEST_CONFIG, login, apiPost, waitForAutosave } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, apiPost, waitForAutosave, cleanupTest } from '../fixtures/test-helpers';
 
 const BASE_URL = TEST_CONFIG.baseUrl;
 
 test.describe('Search Highlight Functionality', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
+  });
+
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
   });
 
   async function createTestNote(page: import('@playwright/test').Page, noteName: string, content: string): Promise<void> {

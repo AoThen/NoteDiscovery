@@ -289,6 +289,46 @@ export const test = base.extend<TestFixtures>({
   },
 });
 
+// --- Per-test cleanup hook: call this in afterEach to cleanup test data ---
+
+async function cleanupTestData(baseUrl: string, testPrefix: string): Promise<void> {
+  try {
+    const timeout = setTimeout(() => {
+      console.warn(' Cleanup timeout reached');
+    }, 10000);
+
+    // Cleanup via API: list all notes and delete those matching test prefix
+    // This is best-effort and non-blocking
+    const response = await fetch(`${baseUrl}/api/notes`);
+    if (response.ok) {
+      const notes: Array<{ path: string }> = await response.json();
+      for (const note of notes) {
+        if (note.path && note.path.includes(testPrefix)) {
+          try {
+            await fetch(`${baseUrl}/api/notes/${encodeURIComponent(note.path)}`, {
+              method: 'DELETE',
+            });
+          } catch {
+            // Ignore individual delete failures
+          }
+        }
+      }
+    }
+
+    clearTimeout(timeout);
+  } catch {
+    // Ignore cleanup failures to not break test reporting
+  }
+}
+
+/**
+ * Cleanup test data matching the given prefix.
+ * Usage in test files: afterEach(async ({ testPrefix }) => { await cleanupTest(testPrefix); });
+ */
+async function cleanupTest(testPrefix: string): Promise<void> {
+  await cleanupTestData(TEST_CONFIG.baseUrl, testPrefix);
+}
+
 export {
   expect,
   TEST_CONFIG,
@@ -311,4 +351,5 @@ export {
   apiRequest,
   apiPost,
   apiDelete,
+  cleanupTest,
 };
