@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shared assets directory (`shared/assets/`) for project-owned resources
 - Deployment configuration directory (`deploy/`) for platform-specific configs
 - CODEOWNERS file for automated code review assignments
+- **Chinese documentation for all user guides** (FEATURES_CN, THEMES_CN, TAGS_CN, TEMPLATES_CN, MATHJAX_CN, MERMAID_CN, PLUGINS_CN, SHARING_CN)
+- Updated main README.md with bilingual content (English + Chinese)
+- Updated project-docs/README.md with comprehensive documentation index
 
 ### Changed
 - Moved Tailwind configuration to `build/tailwind/`
