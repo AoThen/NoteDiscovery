@@ -1,0 +1,37 @@
+# GoNote Docker Compose - Production (Pre-built Image)
+# 
+# This is a shortcut file. The main Docker configuration is in:
+# docker/compose/production.yml
+#
+# Usage:
+#   docker-compose up -d
+#
+# Or use the full path:
+#   docker-compose -f docker/compose/production.yml up -d
+#
+# Or use Make:
+#   make docker-prod-up
+
+services:
+  gonote:
+    image: ghcr.io/gamosoft/gonote:go
+    container_name: gonote
+    ports:
+      - "9000:9000"
+    volumes:
+      # Required: Your notes
+      - ./data:/app/data
+      # Optional: Uncomment to customize (file/folder must exist with content!)
+      # - ./go/config.yaml:/app/config.yaml
+      # - ./shared/themes:/app/themes
+      # - ./shared/plugins:/app/plugins
+      # - ./shared/locales:/app/locales
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9000/health"]
+      interval: 60s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

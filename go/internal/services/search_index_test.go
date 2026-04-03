@@ -1,0 +1,294 @@
+package services
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestSearchIndex_NewSearchIndex(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	
+	if si == nil {
+		t.Fatal("NewSearchIndex returned nil")
+	}
+	if si.notesDir != tempDir {
+		t.Errorf("Expected notesDir %s, got %s", tempDir, si.notesDir)
+	}
+	if si.index == nil {
+		t.Error("Index map should not be nil")
+	}
+}
+
+func TestSearchIndex_BuildIndex(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	// Create test notes
+	notes := map[string]string{
+		"test1.md": "# Test Note One\nThis is a test note about golang.",
+		"test2.md": "# Another Note\nThis note discusses programming.",
+		"subdir/test3.md": "# Subdir Note\nGolang programming is fun.",
+	}
+	
+	for path, content := range notes {
+		fullPath := filepath.Join(tempDir, path)
+		if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+			t.Fatalf("Failed to create dir: %v", err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to write file: %v", err)
+		}
+	}
+	
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	err := si.BuildIndex()
+	if err != nil {
+		t.Fatalf("BuildIndex failed: %v", err)
+	}
+	
+	// Verify index was built
+	if si.GetIndexSize() == 0 {
+		t.Error("Index should not be empty after building")
+	}
+}
+
+func TestSearchIndex_Search(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	// Create test notes
+	notes := map[string]string{
+		"golang.md": "# Golang Guide\nGolang is a programming language.",
+		"python.md": "# Python Guide\nPython is another programming language.",
+		"other.md":  "# Other\nThis note has no relevant content.",
+	}
+	
+	for path, content := range notes {
+		fullPath := filepath.Join(tempDir, path)
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to write file: %v", err)
+		}
+	}
+	
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	if err := si.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex failed: %v", err)
+	}
+	
+	// Search for "golang"
+	results, err := si.Search("golang")
+	if err != nil {
+		t.Fatalf("Search failed: %v", err)
+	}
+	
+	if len(results) == 0 {
+		t.Error("Expected to find results for 'golang'")
+	}
+	
+	// Search for "programming"
+	results, err = si.Search("programming")
+	if err != nil {
+		t.Fatalf("Search failed: %v", err)
+	}
+	
+	if len(results) < 2 {
+		t.Errorf("Expected at least 2 results for 'programming', got %d", len(results))
+	}
+	
+	// Search for non-existent term
+	results, err = si.Search("nonexistent")
+	if err != nil {
+		t.Fatalf("Search failed: %v", err)
+	}
+	
+	if len(results) != 0 {
+		t.Errorf("Expected 0 results for 'nonexistent', got %d", len(results))
+	}
+}
+
+func TestSearchIndex_EmptyQuery(t *testing.T) {
+	tempDir := t.TempDir()
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	
+	results, err := si.Search("")
+	if err != nil {
+		t.Fatalf("Search failed: %v", err)
+	}
+	
+	if len(results) != 0 {
+		t.Errorf("Expected 0 results for empty query, got %d", len(results))
+	}
+}
+
+func TestSearchIndex_UpdateIndex(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	// Create initial note
+	notePath := filepath.Join(tempDir, "test.md")
+	if err := os.WriteFile(notePath, []byte("Original content"), 0644); err != nil {
+		t.Fatalf("Failed to write file: %v", err)
+	}
+	
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	if err := si.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex failed: %v", err)
+	}
+	
+	// Verify original content is indexed
+	results, _ := si.Search("original")
+	if len(results) == 0 {
+		t.Error("Expected to find 'original'")
+	}
+	
+	// Update the note
+	if err := os.WriteFile(notePath, []byte("Updated content with newword"), 0644); err != nil {
+		t.Fatalf("Failed to update file: %v", err)
+	}
+	
+	// Update index
+	if err := si.UpdateIndex("test.md"); err != nil {
+		t.Fatalf("UpdateIndex failed: %v", err)
+	}
+	
+	// Verify new content is indexed
+	results, _ = si.Search("newword")
+	if len(results) == 0 {
+		t.Error("Expected to find 'newword' after update")
+	}
+}
+
+func TestSearchIndex_RemoveFromIndex(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	// Create note
+	notePath := filepath.Join(tempDir, "test.md")
+	if err := os.WriteFile(notePath, []byte("Unique content word"), 0644); err != nil {
+		t.Fatalf("Failed to write file: %v", err)
+	}
+	
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	if err := si.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex failed: %v", err)
+	}
+	
+	// Verify content is indexed
+	results, _ := si.Search("unique")
+	if len(results) == 0 {
+		t.Error("Expected to find 'unique'")
+	}
+	
+	// Remove from index
+	si.RemoveFromIndex("test.md")
+	
+	// Verify content is no longer indexed
+	results, _ = si.Search("unique")
+	if len(results) != 0 {
+		t.Error("Expected no results after removal")
+	}
+}
+
+func TestTokenize(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int // minimum number of terms expected
+	}{
+		{"Hello World", 2},
+		{"This is a test sentence.", 4},
+		{"Golang Programming Language", 3},
+		{"Multiple   spaces   between   words", 4},
+		{"UPPERCASE WORDS", 2},
+		{"a b c d e", 0}, // All words are 1 char, filtered out
+		{"ab cd ef", 3},  // 2+ char words kept
+	}
+	
+	for _, tt := range tests {
+		terms := tokenize(tt.input)
+		if len(terms) < tt.expected {
+			t.Errorf("tokenize(%q) returned %d terms, expected at least %d", 
+				tt.input, len(terms), tt.expected)
+		}
+	}
+}
+
+func TestTokenize_Lowercase(t *testing.T) {
+	terms := tokenize("HELLO World")
+	for _, term := range terms {
+		if term != "hello" && term != "world" {
+			t.Errorf("Expected lowercase terms, got %q", term)
+		}
+	}
+}
+
+func TestTokenize_NoDuplicates(t *testing.T) {
+	terms := tokenize("test test test testing")
+	
+	// Count occurrences
+	counts := make(map[string]int)
+	for _, term := range terms {
+		counts[term]++
+	}
+	
+	for term, count := range counts {
+		if count > 1 {
+			t.Errorf("Duplicate term %q found %d times", term, count)
+		}
+	}
+}
+
+func TestSearchIndex_GetIndexSize(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	// Create note with known content
+	if err := os.WriteFile(filepath.Join(tempDir, "test.md"), []byte("hello world"), 0644); err != nil {
+		t.Fatalf("Failed to write file: %v", err)
+	}
+	
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	
+	// Before building
+	if si.GetIndexSize() != 0 {
+		t.Error("Index should be empty before building")
+	}
+	
+	// After building
+	si.BuildIndex()
+	if si.GetIndexSize() < 2 {
+		t.Errorf("Expected at least 2 terms (hello, world), got %d", si.GetIndexSize())
+	}
+}
+
+func TestSearchIndex_GetIndexedTerms(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	// Create note
+	if err := os.WriteFile(filepath.Join(tempDir, "test.md"), []byte("alpha beta gamma"), 0644); err != nil {
+		t.Fatalf("Failed to write file: %v", err)
+	}
+	
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	si.BuildIndex()
+	
+	terms := si.GetIndexedTerms()
+	
+	// Check that expected terms are present
+	termMap := make(map[string]bool)
+	for _, term := range terms {
+		termMap[term] = true
+	}
+	
+	expectedTerms := []string{"alpha", "beta", "gamma"}
+	for _, expected := range expectedTerms {
+		if !termMap[expected] {
+			t.Errorf("Expected term %q not found in indexed terms", expected)
+		}
+	}
+}
