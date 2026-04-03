@@ -38,6 +38,9 @@ func (h *SearchHandler) Search(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"results": []models.SearchResult{}})
 	}
 
+	// Get search mode: full (default), title, smart
+	mode := c.Query("mode", "full")
+
 	// Get pagination parameters
 	page := c.QueryInt("page", 1)
 	limit := c.QueryInt("limit", 50)
@@ -47,8 +50,16 @@ func (h *SearchHandler) Search(c *fiber.Ctx) error {
 
 	// Use indexed search if available, otherwise fall back to full scan
 	if h.useIndex && h.searchIndex != nil {
-		results, err = h.searchIndex.Search(query)
+		switch mode {
+		case "title":
+			results, err = h.searchIndex.SearchByTitle(query)
+		case "smart":
+			results, err = h.searchIndex.SearchSmart(query)
+		default: // "full"
+			results, err = h.searchIndex.Search(query)
+		}
 	} else {
+		// Fallback: full scan search (mode not supported in legacy search)
 		results, err = h.service.Search(query)
 	}
 

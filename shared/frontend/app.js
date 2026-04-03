@@ -346,6 +346,7 @@ function noteApp() {
         // 搜索状态
         search: {
             query: '',
+            mode: 'full',          // 'full' | 'title' | 'smart'
             results: [],
             page: 1,
             limit: 20,
@@ -1808,8 +1809,9 @@ function noteApp() {
             if (hasTextSearch) {
                 this.search.isSearching = true;
                 try {
-                    // Use pagination parameters from state
-                    const response = await fetch(`/api/search?q=${encodeURIComponent(this.search.query)}&page=${this.search.page}&limit=${this.search.limit}`);
+                    // Use pagination parameters from state, pass search mode
+                    const url = `/api/search?q=${encodeURIComponent(this.search.query)}&mode=${encodeURIComponent(this.search.mode)}&page=${this.search.page}&limit=${this.search.limit}`;
+                    const response = await fetch(url);
                     const data = await response.json();
                     
                     // Handle both old format (direct array) and new format (with pagination)

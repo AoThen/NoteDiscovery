@@ -2010,8 +2010,8 @@
                     <!-- Search Input -->
                     <div class="flex-shrink-0 px-2 py-2 border-b" style="border-color: var(--border-primary);">
                         <div class="relative">
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 x-model="search.query"
                                 @input="debouncedSearchNotes()"
                                 :placeholder="t('sidebar.search_placeholder')"
@@ -2032,6 +2032,34 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
                             </button>
+                        </div>
+
+                        <!-- Search Mode Selector -->
+                        <div class="flex items-center gap-1 mt-2 text-xs">
+                            <button
+                                @click="search.mode = 'full'; debouncedSearchNotes()"
+                                class="px-2 py-0.5 rounded transition-colors"
+                                :class="search.mode === 'full' ? 'font-semibold' : 'opacity-60 hover:opacity-100'"
+                                :style="search.mode === 'full' ? 'background-color: var(--accent-primary); color: white;' : 'color: var(--text-secondary);'"
+                                x-text="t('search.mode_full')"
+                                :title="t('search.mode_full_desc')"
+                            ></button>
+                            <button
+                                @click="search.mode = 'smart'; debouncedSearchNotes()"
+                                class="px-2 py-0.5 rounded transition-colors"
+                                :class="search.mode === 'smart' ? 'font-semibold' : 'opacity-60 hover:opacity-100'"
+                                :style="search.mode === 'smart' ? 'background-color: var(--accent-primary); color: white;' : 'color: var(--text-secondary);'"
+                                x-text="t('search.mode_smart')"
+                                :title="t('search.mode_smart_desc')"
+                            ></button>
+                            <button
+                                @click="search.mode = 'title'; debouncedSearchNotes()"
+                                class="px-2 py-0.5 rounded transition-colors"
+                                :class="search.mode === 'title' ? 'font-semibold' : 'opacity-60 hover:opacity-100'"
+                                :style="search.mode === 'title' ? 'background-color: var(--accent-primary); color: white;' : 'color: var(--text-secondary);'"
+                                x-text="t('search.mode_title')"
+                                :title="t('search.mode_title_desc')"
+                            ></button>
                         </div>
                         
                         <!-- Match Navigation -->

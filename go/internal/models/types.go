@@ -41,6 +41,7 @@ type SearchResult struct {
 	Folder  string         `json:"folder"`
 	Type    string         `json:"type"`
 	Matches []MatchContext `json:"matches"`
+	Score   float64        `json:"score,omitempty"` // relevance score for smart mode
 }
 
 // SearchResultsResponse represents response from search requests

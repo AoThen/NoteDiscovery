@@ -261,7 +261,13 @@
     "result_singular": "个结果",
     "result_plural": "个结果",
     "no_results": "没有笔记包含\"{{query}}\"",
-    "searching": "正在搜索\"{{query}}\"..."
+    "searching": "正在搜索\"{{query}}\"...",
+    "mode_full": "全文",
+    "mode_full_desc": "搜索所有笔记内容",
+    "mode_smart": "智能",
+    "mode_smart_desc": "标题优先，内容兜底",
+    "mode_title": "标题",
+    "mode_title_desc": "仅搜索笔记标题"
   },
 
   "theme": {

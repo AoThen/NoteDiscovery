@@ -261,7 +261,13 @@
     "result_singular": "result",
     "result_plural": "results",
     "no_results": "No notes contain \"{{query}}\"",
-    "searching": "Searching for \"{{query}}\"..."
+    "searching": "Searching for \"{{query}}\"...",
+    "mode_full": "Full Text",
+    "mode_full_desc": "Search across all note content",
+    "mode_smart": "Smart",
+    "mode_smart_desc": "Title matches first, then content as fallback",
+    "mode_title": "Title Only",
+    "mode_title_desc": "Search only note titles"
   },
 
   "theme": {
