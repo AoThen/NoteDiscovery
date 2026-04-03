@@ -5225,11 +5225,20 @@ function noteApp() {
                 return `<li>${text}</li>\n`;
             };
 
+            // Custom tokenizer to disable Setext-style headings (lheading)
+            // This prevents lines followed by "---" or "===" from being converted to headings
+            // which causes issues when users write paths like "/api/auth/register" followed by "---"
+            const customTokenizer = new marked.Tokenizer();
+            customTokenizer.lheading = function() {
+                return null; // Never match Setext-style headings
+            };
+
             // Configure marked with syntax highlighting and custom renderer
             marked.setOptions({
                 breaks: true,
                 gfm: true,
                 renderer: renderer,
+                tokenizer: customTokenizer,
                 highlight: function(code, lang) {
                     if (lang && hljs.getLanguage(lang)) {
                         try {
