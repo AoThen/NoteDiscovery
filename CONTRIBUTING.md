@@ -135,7 +135,7 @@ Themes should:
 
 Plugins should:
 - Follow the existing plugin structure (see `shared/plugins/` directory)
-- Include documentation in `documentation/PLUGINS.md`
+- Include documentation in `project-docs/user-guide/PLUGINS.md`
 - Be optional and not break core functionality if disabled
 - Follow the plugin configuration format
 

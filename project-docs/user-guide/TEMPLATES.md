@@ -104,7 +104,7 @@ date: 2025-11-26
 
 ## Example Templates
 
-We provide three example templates in `documentation/templates/` that you can copy to your `data/_templates/` folder:
+We provide three example templates in `project-docs/templates/` that you can copy to your `data/_templates/` folder:
 
 1. **meeting-notes.md** - Structured meeting notes with agenda, discussion, and action items
 2. **daily-journal.md** - Daily journal with morning goals and evening reflection
@@ -114,7 +114,7 @@ We provide three example templates in `documentation/templates/` that you can co
 
 **Option 1: Copy Manually**
 ```bash
-cp documentation/templates/*.md data/_templates/
+cp project-docs/templates/*.md data/_templates/
 ```
 
 **Option 2: Create Your Own**

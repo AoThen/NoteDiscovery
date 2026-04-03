@@ -1,7 +1,7 @@
 # GoNote Configuration
 # GoNote 配置文件
-# See documentation/ENVIRONMENT_VARIABLES.md for environment variable overrides
-# 详见 documentation/ENVIRONMENT_VARIABLES.md 了解环境变量覆盖配置
+# See project-docs/developer-guide/ENVIRONMENT_VARIABLES.md for environment variable overrides
+# 详见 project-docs/developer-guide/ENVIRONMENT_VARIABLES.md 了解环境变量覆盖配置
 
 app:
   name: "GoNote"
