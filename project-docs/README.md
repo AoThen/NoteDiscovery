@@ -31,10 +31,6 @@ Technical documentation for developers and contributors.
 |----------|-------------|
 | [API.md](developer-guide/API.md) / [中文版](developer-guide/API_CN.md) | REST API 文档和示例 |
 | [ENVIRONMENT_VARIABLES.md](developer-guide/ENVIRONMENT_VARIABLES.md) / [中文版](developer-guide/ENVIRONMENT_VARIABLES_CN.md) | 环境变量配置参考 |
-| [MIGRATION.md](developer-guide/MIGRATION.md) | 文件重组迁移指南 |
-| [STRUCTURE.md](developer-guide/STRUCTURE.md) | 项目结构概述 |
-| [FRONTEND_REFACTOR.md](developer-guide/FRONTEND_REFACTOR.md) | 前端重构说明 |
-| [STATE_VARIABLES_TODO.md](developer-guide/STATE_VARIABLES_TODO.md) | 状态管理待办事项 |
 
 ### 🔒 安全 / Security
 安全指南和最佳实践。
@@ -55,23 +51,7 @@ Project-level documentation.
 
 | 文档 / Document | 描述 / Description |
 |----------|-------------|
-| [CHANGELOG.md](CHANGELOG.md) | 版本历史和发布说明 |
-| [CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md) | 清理总结 |
-| [INSPECTION_REPORT.md](INSPECTION_REPORT.md) | 检查报告 |
-
-### 📦 遗留 / Legacy (Python 后端)
-遗留 Python FastAPI 后端的文档（维护模式）。
-
-Documentation for the legacy Python FastAPI backend (maintenance mode).
-
-| 文档 / Document | 描述 / Description |
-|----------|-------------|
-| [PLUGIN_NOTE_STATISTICS.md](legacy/PLUGIN_NOTE_STATISTICS.md) | 插件统计文档 |
-| [README_CN.md](legacy/README_CN.md) | Go 后端文档（中文） |
-| [README.md](legacy/README.md) | Go 后端文档（英文） |
-
-> **注意 / Note:** Python 后端已进入维护模式。新部署请使用 Go 后端。
-> **Note:** The Python backend is in maintenance mode. For new deployments, use the Go backend.
+| [CHANGELOG.md](../CHANGELOG.md) | 版本历史和发布说明 |
 
 ### 📝 模板 / Templates
 笔记模板文件。
@@ -110,10 +90,6 @@ Template files for notes.
 ```
 project-docs/
 ├── README.md                 # 本文件 / This file
-├── CHANGELOG.md              # 版本历史 / Version history
-├── CLEANUP_SUMMARY.md        # 清理总结 / Cleanup summary
-├── INSPECTION_REPORT.md      # 检查报告 / Inspection report
-├── SECURITY_CONTACT.md       # 安全报告联系人 / Security contact
 ├── user-guide/               # 面向用户的文档 / User-facing documentation
 │   ├── FEATURES.md / FEATURES_CN.md
 │   ├── THEMES.md / THEMES_CN.md
@@ -125,20 +101,12 @@ project-docs/
 │   └── SHARING.md / SHARING_CN.md
 ├── developer-guide/          # 技术文档 / Technical documentation
 │   ├── API.md / API_CN.md
-│   ├── ENVIRONMENT_VARIABLES.md / ENVIRONMENT_VARIABLES_CN.md
-│   ├── MIGRATION.md
-│   ├── STRUCTURE.md
-│   ├── FRONTEND_REFACTOR.md
-│   └── STATE_VARIABLES_TODO.md
+│   └── ENVIRONMENT_VARIABLES.md / ENVIRONMENT_VARIABLES_CN.md
 ├── security/                 # 安全文档 / Security documentation
 │   ├── SECURITY.md
 │   ├── SECURITY_CN.md
 │   ├── AUTHENTICATION.md
 │   └── AUTHENTICATION_CN.md
-├── legacy/                   # 遗留 Python 后端文档 / Legacy Python backend docs
-│   ├── PLUGIN_NOTE_STATISTICS.md
-│   ├── README_CN.md
-│   └── README.md
 └── templates/                # 笔记模板 / Note templates
     ├── daily-journal.md
     ├── meeting-notes.md
@@ -161,4 +129,4 @@ If you find errors or want to improve documentation, please:
 
 ---
 
-**最后更新 / Last Updated:** 2026-04-03
+**最后更新 / Last Updated:** 2026-04-03 (v0.25.0 - 文档整理)
