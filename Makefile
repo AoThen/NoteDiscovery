@@ -14,11 +14,11 @@ help:
 	@echo "    make docker-build      - Build Docker image (Go)"
 	@echo "    make docker-up         - Start Docker Compose (Go development)"
 	@echo "    make docker-down       - Stop Docker Compose"
+	@echo "    make docker-prod-build - Build production Docker image"
 	@echo "    make docker-prod-up    - Start production Docker (pre-built image)"
 	@echo "    make docker-prod-down  - Stop production Docker"
-	@echo "    make docker-legacy-up  - Start Python backend (legacy)"
 	@echo ""
-	@echo "  Configuration:"
+	@echo "  Tests:"
 	@echo "    make test-e2e        - Run Playwright E2E tests"
 	@echo "    make test-e2e-ui     - Run tests with Playwright UI"
 	@echo ""
@@ -26,10 +26,6 @@ help:
 	@echo "    make deps         - Install frontend dependencies"
 	@echo "    make css-build    - Build Tailwind CSS"
 	@echo "    make css-watch    - Watch and rebuild Tailwind CSS"
-	@echo ""
-	@echo "  Scripts:"
-	@echo "    make release      - Create a new release (run scripts/release.sh)"
-	@echo "    make password     - Generate password hash (Python required)"
 	@echo ""
 	@echo "  Cleanup:"
 	@echo "    make clean        - Clean build artifacts"
@@ -68,9 +64,6 @@ docker-prod-up:
 docker-prod-down:
 	docker-compose -f docker/compose/production.yml down
 
-docker-legacy-up:
-	docker-compose -f docker/compose/python-legacy.yml up
-
 # ==================== Frontend ====================
 
 deps:
@@ -85,15 +78,10 @@ css-watch:
 # ==================== Tests ====================
 
 test-e2e:
-	npx playwright test --config=config/playwright.config.ts
+	npx playwright test --config=tests/playwright.config.ts
 
 test-e2e-ui:
-	npx playwright test --config=config/playwright.config.ts --ui
-
-# ==================== Scripts ====================
-
-password:
-	python scripts/generate_password.py
+	npx playwright test --config=tests/playwright.config.ts --ui
 
 # ==================== Cleanup ====================
 
@@ -101,20 +89,3 @@ clean:
 	rm -rf go/server go/main go/notediscovery
 	go clean -cache
 	rm -rf node_modules
-
-# ==================== Release ====================
-
-release:
-	@echo "Usage: make release VERSION=X.Y.Z"
-	@echo "Example: make release VERSION=0.24.0"
-	@echo ""
-	@echo "Or run the script directly:"
-	@echo "  Bash:   ./scripts/release.sh <version>"
-	@echo "  PowerShell: ./scripts/release.ps1 -Version <version>"
-
-release-version:
-	@if [ -z "$(VERSION)" ]; then \
-		echo "Error: VERSION is required. Usage: make release-version VERSION=X.Y.Z"; \
-		exit 1; \
-	fi
-	./scripts/release.sh $(VERSION)

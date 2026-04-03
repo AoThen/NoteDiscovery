@@ -17,12 +17,11 @@ GoNote is a **lightweight, self-hosted note-taking application** that puts you i
 
 ## Tech Stack
 
-| Component | Technology | Status |
-|-----------|------------|--------|
-| **Backend** | Go 1.24+ with Fiber | Active |
-| **Frontend** | Vanilla JS + Alpine.js | Active |
-| **Storage** | Plain Markdown files | - |
-| ~~Python Backend~~ | ~~FastAPI~~ | Legacy (maintenance only) |
+| Component | Technology |
+|-----------|------------|
+| **Backend** | Go 1.24+ with Fiber |
+| **Frontend** | Vanilla JS + Alpine.js |
+| **Storage** | Plain Markdown files |
 
 ## Who is it for?
 
@@ -292,20 +291,6 @@ See **[SECURITY.md](project-docs/SECURITY.md)** for complete security guide.
 - Set appropriate file permissions on the `data/` directory
 
 **TL;DR**: Perfect for personal use on your local machine or home network. Enable built-in password protection if needed, or use a reverse proxy with authentication if exposing to wider networks.
-
-## Legacy Python Backend
-
-> **Note:** The Python (FastAPI) backend is in maintenance mode. For new deployments, use the Go backend.
-
-If you need the Python version for compatibility reasons:
-
-```bash
-cd python
-pip install -r requirements.txt
-python run.py
-```
-
-See `python/` directory for more details.
 
 ## License
 

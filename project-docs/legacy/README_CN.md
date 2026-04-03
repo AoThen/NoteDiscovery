@@ -137,7 +137,7 @@ docker-compose down
 
 ```bash
 # 使用预构建镜像
-docker-compose -f docker-compose.ghcr.yml up -d
+docker-compose -f docker/compose/production.yml up -d
 ```
 
 ## 配置说明

@@ -11,17 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project file reorganization with new directory structure
 - Centralized Docker configuration in `docker/` directory
 - Categorized documentation in `project-docs/` with subdirectories
-- Bash release script (`scripts/release.sh`)
 - Test directory reorganization with `tests/e2e/` structure
 - Build configuration directory (`build/`) for Tailwind
 - Shared assets directory (`shared/assets/`) for project-owned resources
+- Deployment configuration directory (`deploy/`) for platform-specific configs
 - CODEOWNERS file for automated code review assignments
 
 ### Changed
 - Moved Tailwind configuration to `build/tailwind/`
 - Consolidated documentation from `documentation/` into `project-docs/`
 - Reorganized tests into `tests/e2e/` subdirectory
+- Migrated `config/` files to appropriate locations (`tests/`, `deploy/`, `build/`)
 - Updated `.gitignore` with new build output paths
+
+### Removed
+- `scripts/` directory (release scripts no longer needed)
+- `config/` directory (files migrated)
+- Root-level `docker-compose.ghcr.yml` (use `docker/compose/production.yml`)
 
 ### Deprecated
 - Root-level `input.css` (use `build/tailwind/input.css`)
@@ -39,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go 1.24+ backend with Fiber framework
 - Enhanced search with inverted index
 - Graph view for note relationships
-- Multiple themes (10 built-in)
+- Multiple themes (16 built-in)
 - Plugin system
 - Share tokens for notes
 - MathJax support

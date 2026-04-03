@@ -1,2 +1,0 @@
-# GoNote Backend
-

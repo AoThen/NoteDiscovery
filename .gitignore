@@ -7,29 +7,8 @@ package-lock.json
 yarn.lock
 
 # ==================== Playwright ====================
-# Test output only, not test files
 playwright-report/
 test-results/
-tests/playwright-report/
-tests/test-results/
-
-# ==================== Python (Legacy - python/ directory only) ====================
-# Only applies to python/ directory for legacy backend
-python/__pycache__/
-python/*.py[cod]
-python/*$py.class
-python/*.so
-python/.Python
-python/build/
-python/dist/
-python/*.egg-info/
-python/venv/
-python/ENV/
-python/env/
-python/.venv
-python/eggs/
-python/.eggs/
-python/backend/__pycache__/
 
 # ==================== Go ====================
 # Build artifacts
@@ -95,27 +74,14 @@ cookies.txt
 AGENTS.md
 
 # ==================== Build Outputs ====================
-build/
 shared/assets/css/tailwind.css
 
 # ==================== Test Coverage ====================
 coverage/
 *.cover
 
-# ==================== Test Results ====================
-test-results/
-tests/test-results/
-tests/playwright-report/
-playwright-report/
-
 # ==================== Legacy / Migration ====================
 docs/go-migration
 .sisyphus
 dont-upload/
 go/coverage.out
-
-# ==================== Old Docker Files (removed) ====================
-go/Dockerfile
-go/docker-compose.yml
-python/Dockerfile
-python/docker-compose.yml

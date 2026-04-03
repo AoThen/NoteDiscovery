@@ -8,12 +8,9 @@ This directory contains all Docker-related configuration files for GoNote.
 docker/
 ├── compose/
 │   ├── development.yml    # Go backend development configuration
-│   ├── production.yml     # Production configuration (uses pre-built image)
-│   └── python-legacy.yml  # Python backend (legacy/maintenance)
-├── go/
-│   └── Dockerfile         # Go backend Dockerfile
-└── python/
-    └── Dockerfile         # Python backend Dockerfile
+│   └── production.yml     # Production configuration (uses pre-built image)
+└── go/
+    └── Dockerfile         # Go backend Dockerfile
 ```
 
 ## Quick Start
@@ -29,7 +26,7 @@ docker-compose -f docker/compose/production.yml up -d
 
 Or use the root-level shortcut:
 ```bash
-docker-compose up -d
+docker-compose -f docker-compose.ghcr.yml up -d
 ```
 
 ### Development
@@ -39,15 +36,6 @@ Build and run from local source:
 ```bash
 # Using the development compose file
 docker-compose -f docker/compose/development.yml up -d
-```
-
-### Python Backend (Legacy)
-
-For compatibility testing or legacy deployments:
-
-```bash
-# Using the python-legacy compose file
-docker-compose -f docker/compose/python-legacy.yml up -d
 ```
 
 ## Configuration Files
@@ -62,11 +50,6 @@ docker-compose -f docker/compose/python-legacy.yml up -d
 - Builds from local Go source code
 - Includes volume mounts for hot reload
 - Use for development and testing
-
-### python-legacy.yml
-- Uses Python FastAPI backend
-- Legacy/maintenance mode only
-- For compatibility testing
 
 ## Docker Commands
 
@@ -103,16 +86,8 @@ See [project-docs/developer-guide/ENVIRONMENT_VARIABLES.md](../project-docs/deve
 
 ## Building Custom Images
 
-### Go Backend
-
 ```bash
 docker build -f docker/go/Dockerfile -t gonote:custom .
-```
-
-### Python Backend
-
-```bash
-docker build -f docker/python/Dockerfile -t gonote:python .
 ```
 
 ## Health Check
@@ -148,8 +123,6 @@ If you were using the old docker-compose files:
 |----------|----------|
 | `go/docker-compose.yml` | `docker/compose/development.yml` |
 | `docker-compose.ghcr.yml` | `docker/compose/production.yml` |
-| `python/docker-compose.yml` | `docker/compose/python-legacy.yml` |
 | `go/Dockerfile` | `docker/go/Dockerfile` |
-| `python/Dockerfile` | `docker/python/Dockerfile` |
 
 The old files remain in place for backward compatibility, but please update to the new structure.

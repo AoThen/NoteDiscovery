@@ -7,21 +7,19 @@ This document provides an overview of the GoNote project structure after the v0.
 ```
 GoNote/
 ├── 📁 .github/              # GitHub configuration (CODEOWNERS, workflows)
-├── 📁 build/                # Build configuration (Tailwind CSS)
+├── 📁 build/                # Build configuration (Tailwind CSS, TypeScript)
+├── 📁 deploy/               # Deployment configuration (Render.com, etc.)
 ├── 📁 docker/               # Docker configuration (centralized)
 ├── 📁 docs/                 # Website documentation and assets
 ├── 📁 go/                   # Go backend (primary)
-├── 📁 python/               # Python backend (legacy)
 ├── 📁 project-docs/         # Project documentation (categorized)
-├── 📁 scripts/              # Build and release scripts
 ├── 📁 shared/               # Shared resources
 │   ├── 📁 assets/          # Project-owned assets
 │   ├── 📁 frontend/        # Frontend application
 │   ├── 📁 locales/         # Translations
 │   ├── 📁 plugins/         # Plugins
 │   └── 📁 themes/          # CSS themes
-├── 📁 tests/                # Test suites
-│   └── 📁 e2e/             # Playwright E2E tests
+├── 📁 tests/                # Test suites (Playwright E2E)
 ├── 📄 CHANGELOG.md          # Version history
 ├── 📄 CONTRIBUTING.md       # Contributing guidelines
 ├── 📄 LICENSE               # MIT License
@@ -49,6 +47,7 @@ Build tooling configuration.
 | `tailwind/input.css` | Tailwind CSS source |
 | `tailwind/tailwind.config.js` | Tailwind configuration |
 | `tailwind/postcss.config.js` | PostCSS configuration |
+| `tsconfig.json` | TypeScript configuration |
 | `README.md` | Build documentation |
 
 **Usage:**
@@ -73,6 +72,14 @@ Centralized Docker configuration.
 make docker-up        # Start development
 make docker-prod-up   # Start production
 ```
+
+### `deploy/`
+Deployment configuration for various platforms.
+
+| File | Platform | Purpose |
+|------|----------|---------|
+| `render.yaml` | Render.com | Deployment blueprint |
+| `README.md` | — | Deployment documentation |
 
 ### `docs/`
 Website documentation, screenshots, and marketing assets.
@@ -100,17 +107,6 @@ Go backend implementation (primary backend).
 cd go && go run cmd/server/main.go
 ```
 
-### `python/`
-Python FastAPI backend (legacy/maintenance mode).
-
-| File | Purpose |
-|------|---------|
-| `backend/` | FastAPI application |
-| `config.yaml` | Python configuration |
-| `requirements.txt` | Python dependencies |
-| `Dockerfile` | Docker build (legacy path) |
-| `DEPRECATED.md` | Deprecation notice |
-
 ### `project-docs/`
 Comprehensive project documentation, categorized by audience.
 
@@ -123,20 +119,6 @@ Comprehensive project documentation, categorized by audience.
 | `templates/` | Note templates |
 | `README.md` | Documentation index |
 | `MIGRATION.md` | Migration guide for v0.24.0 changes |
-
-### `scripts/`
-Automation scripts for common tasks.
-
-| File | Purpose |
-|------|---------|
-| `release.sh` | Bash release script (cross-platform) |
-| `release.ps1` | PowerShell release script (Windows) |
-
-**Usage:**
-```bash
-./scripts/release.sh 0.24.0
-make release-version VERSION=0.24.0
-```
 
 ### `shared/`
 Shared resources used by both backends.
@@ -161,7 +143,7 @@ Frontend application (shared between backends).
 | `libs/` | Third-party library cache (CDN-free) |
 
 #### `shared/themes/`
-CSS themes (10 built-in themes).
+CSS themes (16 built-in themes: 11 dark + 5 light).
 
 #### `shared/plugins/`
 Plugin system and default plugins.
@@ -219,11 +201,12 @@ Go backend internal packages (clean architecture).
 | Change | Reason |
 |--------|--------|
 | `build/` directory | Centralize build configuration |
+| `deploy/` directory | Platform-specific deployment configs |
 | `docker/` directory | Unify Docker configuration |
 | `shared/assets/` | Separate project assets from third-party libs |
 | `tests/e2e/` | Clarify test type (E2E vs unit) |
 | `project-docs/` categories | Organize documentation by audience |
-| `scripts/release.sh` | Cross-platform release support |
+| `config/` migration | Files moved to appropriate locations |
 
 ## Backward Compatibility
 
@@ -231,7 +214,6 @@ The following legacy paths still work but are deprecated:
 
 - `go/Dockerfile` → Use `docker/go/Dockerfile`
 - `go/docker-compose.yml` → Use `docker/compose/development.yml`
-- `docker-compose.ghcr.yml` → Use `docker/compose/production.yml`
 - `input.css` → Use `build/tailwind/input.css`
 - `tailwind.config.js` → Use `build/tailwind/tailwind.config.js`
 

@@ -2,18 +2,29 @@
 
 ## Built-in Themes
 
-GoNote comes with **10 beautiful themes** out of the box:
+GoNote comes with **16 beautiful themes** out of the box:
 
-- 🌞 **Light** - Clean, professional, easy on the eyes
-- 🌙 **Dark** - Modern dark mode for night owls
+### Dark Themes
+
+- 🌙 **Dark** - Neutral, safe default using Tailwind color palette
 - 🧛 **Dracula** - Popular purple-tinted dark theme
-- ❄️ **Nord** - Cool, Arctic-inspired color palette
-- 🎨 **Monokai** - Vibrant, high-contrast theme inspired by the classic code editor theme
-- 💚 **Vue High Contrast** - Dark theme with distinctive greenish tint and Vue.js aesthetics
-- 🌊 **Cobalt2** - Deep ocean blue with vibrant yellow highlights, inspired by Wes Bos
-- 🔷 **VS Blue** - Classic Visual Studio 2015 light blue professional theme
-- 🟫 **Gruvbox Dark** - A retro groove color scheme for Vim lovers
-- 🍵 **Matcha Light** - A vibrant, green-tinted light theme inspired by Doki Theme
+- ❄️ **Nord** - Cool, Arctic-inspired frost blue palette
+- 🎨 **Monokai** - Vibrant cyan accent, Sublime Text classic
+- 💚 **Vue High Contrast** - Deep contrast with green tint, accessibility-focused
+- 🌊 **Cobalt2** - Deep navy blue with vibrant yellow highlights
+- 🟫 **Gruvbox Dark** - Warm retro orange, Vim-inspired
+- 🌃 **Tokyo Night** - Deep blue-purple with soft neon accents
+- 🟣 **Catppuccin Mocha** - Soothing lavender with pastel rainbow colors
+- 🤖 **One Dark** - Balanced blue-green-orange, Atom editor classic
+- 🌹 **Rosé Pine** - Deep purple with warm rose-gold and lavender
+
+### Light Themes
+
+- 🌞 **Light** - Clean white with blue accent, Tailwind defaults
+- 🔷 **VS Blue** - Classic Visual Studio blue, corporate feel
+- 🍵 **Matcha Light** - Vibrant green monochromatic theme
+- ☀️ **Solarized Light** - Precision beige for reduced eye strain
+- ⚪ **One Light** - Warm white with multi-color accents, Atom light
 
 Switch themes anytime from the sidebar dropdown. Your preference is saved automatically!
 

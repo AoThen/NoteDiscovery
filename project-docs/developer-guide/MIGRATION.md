@@ -31,7 +31,6 @@ The project has been reorganized to improve maintainability, consistency, and de
 
 | File | Purpose |
 |------|---------|
-| `scripts/release.sh` | Bash release script |
 | `CHANGELOG.md` | Version history |
 | `SECURITY_CONTACT.md` | Security reporting contact |
 | `.github/CODEOWNERS` | Code ownership |
@@ -40,6 +39,7 @@ The project has been reorganized to improve maintainability, consistency, and de
 | `shared/assets/README.md` | Assets documentation |
 | `build/README.md` | Build configuration docs |
 | `docker/README.md` | Docker documentation |
+| `deploy/README.md` | Deployment documentation |
 
 ### 🗑️ Removed Directories
 
@@ -65,6 +65,9 @@ The project has been reorganized to improve maintainability, consistency, and de
 | `project-docs/AUTHENTICATION.md` | `project-docs/security/AUTHENTICATION.md` |
 | `tests/*.spec.ts` | `tests/e2e/*.spec.ts` |
 | `tests/*/` | `tests/e2e/*/` |
+| `config/playwright.config.ts` | `tests/playwright.config.ts` |
+| `config/render.yaml` | `deploy/render.yaml` |
+| `config/tsconfig.json` | `build/tsconfig.json` |
 
 ## Impact Assessment
 
@@ -129,22 +132,6 @@ docker build -f go/Dockerfile -t gonote .
 docker build -f docker/go/Dockerfile -t gonote .
 ```
 
-#### Release Script
-
-**Old (PowerShell only):**
-```powershell
-./scripts/release.ps1 -Version 0.24.0
-```
-
-**New (Cross-platform):**
-```bash
-# Bash
-./scripts/release.sh 0.24.0
-
-# Or via Make
-make release-version VERSION=0.24.0
-```
-
 #### Test Paths
 
 **Old:**
@@ -181,7 +168,6 @@ All documentation has been reorganized into categories:
 The old Docker Compose files remain in their original locations for backward compatibility:
 
 - `go/docker-compose.yml` (still works)
-- `docker-compose.ghcr.yml` (still works)
 - `python/docker-compose.yml` (still works)
 
 **However, these will be removed in a future release.** Please update your scripts.
