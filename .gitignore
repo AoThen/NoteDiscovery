@@ -85,3 +85,4 @@ docs/go-migration
 .sisyphus
 dont-upload/
 go/coverage.out
+10_Run Playwright tests.txt

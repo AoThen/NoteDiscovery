@@ -7,38 +7,38 @@ test.describe('Homepage Display Fix', () => {
     page.on('console', msg => {
       consoleMessages.push(`${msg.type()}: ${msg.text()}`);
     });
-    
-    // Navigate directly to home (no login required since auth is disabled)
-    await page.goto('/');
-    
+
+    // Login first (auth may be enabled in CI)
+    await login(page);
+
     // Wait for Alpine.js to initialize
-    await page.waitForSelector('[x-data]', { timeout: 15000 });
-    
+    await page.waitForSelector('[x-data]', { timeout: 10000 });
+
     // Wait for content to render
     await page.waitForTimeout(300);
 
     // Take screenshot
     await page.screenshot({ path: 'test-homepage-fix.png', fullPage: true });
-    
+
     // Check for "X notes Y folders" summary text - proves content loaded
     const summaryText = await page.locator('text=/\\d+ notes?/i').first().textContent();
     console.log(`Found summary: ${summaryText}`);
-    
+
     // Verify we have content (not empty)
     expect(summaryText).toBeTruthy();
     expect(summaryText).toMatch(/\d+/);
-    
+
     // Check for empty state message (should NOT exist)
     const emptyState = await page.locator('text=/No notes found|Create your first|开始创建/i').count();
     console.log(`Empty state elements: ${emptyState}`);
-    
+
     // Should NOT show empty state
     expect(emptyState).toBe(0);
-    
+
     // Check console for errors
     const errors = consoleMessages.filter(m => m.startsWith('error:'));
     console.log(`Console errors: ${errors.length}`);
-    
+
     // Check for HOMEPAGE_MAX_NOTES error specifically
     const homepageErrors = consoleMessages.filter(m => m.includes('HOMEPAGE_MAX_NOTES'));
     if (homepageErrors.length > 0) {

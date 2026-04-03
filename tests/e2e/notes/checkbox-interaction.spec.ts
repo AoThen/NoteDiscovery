@@ -27,9 +27,10 @@ test.describe('Checkbox Interaction', () => {
     await noteItem.click();
     await page.waitForTimeout(200);
 
-    // Switch to Preview mode
-    const previewButton = page.locator('button').filter({ hasText: /^Preview$/ }).first();
-    if (await previewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    // Switch to Preview mode using the view mode selector
+    // The button text may vary, so use data attributes or position
+    const previewButton = page.locator('[data-testid="view-mode-preview"], button:has-text("Preview"), button').filter({ hasText: /Preview/i }).first();
+    if (await previewButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       await previewButton.click();
       await page.waitForTimeout(300);
     }

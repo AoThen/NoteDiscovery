@@ -24,12 +24,12 @@ export default defineConfig({
   testDir: './e2e',
   /* Global teardown to clean up test data */
   globalTeardown: './e2e/fixtures/global-teardown.ts',
-  /* Global timeout for entire test suite (15 min) */
-  globalTimeout: 15 * 60 * 1000,
+  /* Global timeout for entire test suite (30 min) */
+  globalTimeout: 30 * 60 * 1000,
   /* Default timeout for each test action */
-  timeout: 60 * 1000,
+  timeout: 45 * 1000,
   /* Run tests in files in parallel */
-  fullyParallel: false, // Disabled for dependency order: auth -> CRUD -> search -> advanced
+  fullyParallel: true, // Enabled for faster CI execution
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */

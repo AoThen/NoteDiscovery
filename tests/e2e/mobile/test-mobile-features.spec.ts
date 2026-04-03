@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, login } from '../fixtures/test-helpers';
 
 const TEST_CONFIG = {
   baseUrl: 'http://localhost:9000',
@@ -7,8 +7,12 @@ const TEST_CONFIG = {
 test.describe('Mobile Sidebar & Toolbar Test', () => {
   test.use({ viewport: { width: 375, height: 667 } });
 
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+  });
+
   test('mobile sidebar can be opened via bottom tab', async ({ page }) => {
-    await page.goto(TEST_CONFIG.baseUrl);
+    // Wait for content to render
     await page.waitForTimeout(300);
 
     // Click on Files tab to open sidebar
@@ -26,9 +30,6 @@ test.describe('Mobile Sidebar & Toolbar Test', () => {
   });
 
   test('mobile search tab opens search panel', async ({ page }) => {
-    await page.goto(TEST_CONFIG.baseUrl);
-    await page.waitForTimeout(300);
-
     // Click on Search tab
     const searchTab = page.locator('.mobile-bottom-tab').nth(1);
     await searchTab.click();
@@ -44,9 +45,6 @@ test.describe('Mobile Sidebar & Toolbar Test', () => {
   });
 
   test('mobile tags tab opens tags panel', async ({ page }) => {
-    await page.goto(TEST_CONFIG.baseUrl);
-    await page.waitForTimeout(300);
-
     // Click on Tags tab
     const tagsTab = page.locator('.mobile-bottom-tab').nth(2);
     await tagsTab.click();
@@ -57,9 +55,6 @@ test.describe('Mobile Sidebar & Toolbar Test', () => {
   });
 
   test('mobile graph view opens', async ({ page }) => {
-    await page.goto(TEST_CONFIG.baseUrl);
-    await page.waitForTimeout(300);
-
     // Click on Graph tab
     const graphTab = page.locator('.mobile-bottom-tab').nth(3);
     await graphTab.click();
@@ -75,8 +70,6 @@ test.describe('Mobile Sidebar & Toolbar Test', () => {
   });
 
   test('mobile settings tab opens settings panel', async ({ page }) => {
-    await page.goto(TEST_CONFIG.baseUrl);
-    await page.waitForTimeout(300);
 
     // Click on Settings tab
     const settingsTab = page.locator('.mobile-bottom-tab').nth(4);
