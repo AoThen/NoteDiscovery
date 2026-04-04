@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, TEST_CONFIG, login, waitForAutosave } from '../fixtures/test-helpers';
 
-const TEST_CONFIG = {
+const OUTLINE_CONFIG = {
   defaultTimeout: 10000,
 };
 
@@ -16,38 +16,17 @@ async function openOutlinePanel(page: import('@playwright/test').Page) {
 
   // Wait for outline panel to be visible
   const outlinePanel = page.locator('.outline-panel');
-  await outlinePanel.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout }).catch(() => {});
+  await outlinePanel.waitFor({ state: 'visible', timeout: OUTLINE_CONFIG.defaultTimeout }).catch(() => {});
 }
 
 test.describe('Outline Panel', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(300);
+    await login(page);
   });
 
   test('outline panel displays headings', async ({ page }) => {
     const noteName = `outline_test_${Date.now()}`;
-
-    // Click the +New button to open dropdown
-    const newButton = page.locator('button:has-text("New")').first();
-    await newButton.click();
-
-    // Click on "New Note" (📝) in the dropdown
-    const newNoteOption = page.locator('button:has-text("📝")').first();
-    await newNoteOption.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
-
-    // Handle the dialog for note name
-    page.once('dialog', async dialog => {
-      await dialog.accept(noteName);
-    });
-
-    await newNoteOption.click({ force: true });
-    await page.waitForTimeout(1500);
-
-    // Type content with headings
-    const editor = page.locator('#note-editor').first();
-    await editor.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
-    await editor.fill(`# Main Title
+    const content = `# Main Title
 
 ## Section 1
 
@@ -63,9 +42,26 @@ More content.
 
 ## Section 3
 
-Final content.`);
+Final content.`;
 
-    // Wait for preview to render and autosave
+    // Create note via API
+    await page.evaluate(async ({ name, content }) => {
+      await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: `${name}.md`,
+          content
+        })
+      });
+    }, { name: noteName, content });
+
+    // Reload and open the note
+    await page.reload();
+    await page.waitForTimeout(500);
+
+    const noteItem = page.locator(`text="${noteName}"`).first();
+    await noteItem.click();
     await page.waitForTimeout(500);
 
     // Open outline panel
@@ -82,7 +78,7 @@ Final content.`);
     const outlineItems = page.locator('.outline-panel button.hover-accent');
     const count = await outlineItems.count();
     console.log(`Found ${count} outline items`);
-    
+
     // Should have 6 headings (1 h1, 3 h2, 2 h3)
     expect(count).toBeGreaterThanOrEqual(6);
 
@@ -95,26 +91,26 @@ Final content.`);
 
   test('outline panel toggle button', async ({ page }) => {
     const noteName = `outline_toggle_${Date.now()}`;
+    const content = `# Title\n\n## Section 1\n\n## Section 2`;
 
-    // Click the +New button to open dropdown
-    const newButton = page.locator('button:has-text("New")').first();
-    await newButton.click();
+    // Create note via API
+    await page.evaluate(async ({ name, content }) => {
+      await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: `${name}.md`,
+          content
+        })
+      });
+    }, { name: noteName, content });
 
-    // Click on "New Note" (📝) in the dropdown
-    const newNoteOption = page.locator('button:has-text("📝")').first();
-    await newNoteOption.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    // Reload and open the note
+    await page.reload();
+    await page.waitForTimeout(500);
 
-    // Handle the dialog for note name
-    page.once('dialog', async dialog => {
-      await dialog.accept(noteName);
-    });
-
-    await newNoteOption.click({ force: true });
-    await page.waitForTimeout(1500);
-
-    const editor = page.locator('#note-editor').first();
-    await editor.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
-    await editor.fill(`# Title\n\n## Section 1\n\n## Section 2`);
+    const noteItem = page.locator(`text="${noteName}"`).first();
+    await noteItem.click();
     await page.waitForTimeout(500);
 
     // Open outline panel
@@ -157,24 +153,26 @@ Final content.`);
 
   test('outline panel responsive on mobile', async ({ page }) => {
     const noteName = `outline_mobile_${Date.now()}`;
+    const content = `# Mobile TITLE\n\n## Mobile Section 1\n\n## Mobile Section 2\n\n### Mobile Subsection`;
 
-    // First create note on desktop, then switch to mobile
-    const newButton = page.locator('button:has-text("New")').first();
-    await newButton.click();
+    // Create note via API on desktop
+    await page.evaluate(async ({ name, content }) => {
+      await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: `${name}.md`,
+          content
+        })
+      });
+    }, { name: noteName, content });
 
-    const newNoteOption = page.locator('button:has-text("📝")').first();
-    await newNoteOption.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    // Reload and open the note
+    await page.reload();
+    await page.waitForTimeout(500);
 
-    page.once('dialog', async dialog => {
-      await dialog.accept(noteName);
-    });
-
-    await newNoteOption.click({ force: true });
-    await page.waitForTimeout(1500);
-
-    const editor = page.locator('#note-editor').first();
-    await editor.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
-    await editor.fill(`# Mobile TITLE\n\n## Mobile Section 1\n\n## Mobile Section 2\n\n### Mobile Subsection`);
+    const noteItem = page.locator(`text="${noteName}"`).first();
+    await noteItem.click();
     await page.waitForTimeout(500);
 
     // Now switch to mobile viewport

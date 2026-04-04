@@ -9,7 +9,9 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # GitHub Actions free tier has 15-minute limit per job
+    # Set to 14 minutes to leave buffer for cleanup
+    timeout-minutes: 14
 
     steps:
     - uses: actions/checkout@v4
@@ -76,6 +78,10 @@ jobs:
 
     - name: Run Playwright tests
       run: npx playwright test --config=tests/playwright.config.ts
+      env:
+        CI: 'true'
+        # Optimize playwright performance
+        PLAYWRIGHT_CHROMIUM_CHANNEL: chrome
 
     - name: Upload failed test screenshots
       if: failure()

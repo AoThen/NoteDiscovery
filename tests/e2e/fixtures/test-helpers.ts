@@ -118,9 +118,14 @@ async function waitForSearchDebounce(page: Page): Promise<void> {
  * Wait for search index to update after creating/editing a note.
  * Uses a page reload with dom ready as the index trigger.
  */
-async function waitForSearchIndex(page: Page): Promise<void> {
+async function waitForSearchIndex(page: Page, timeout?: number): Promise<void> {
   try {
-    await page.reload({ waitUntil: 'dom', timeout: 5000 });
+    // Wait a bit for the backend to process the note
+    await page.waitForTimeout(500);
+    // Reload page to trigger search index rebuild
+    await page.reload({ waitUntil: 'dom', timeout: timeout || 5000 });
+    // Wait additional time for index to be ready
+    await page.waitForTimeout(500);
   } catch {
     await page.waitForTimeout(500);
   }

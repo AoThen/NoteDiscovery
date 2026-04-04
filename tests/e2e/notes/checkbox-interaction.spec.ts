@@ -27,13 +27,16 @@ test.describe('Checkbox Interaction', () => {
     await noteItem.click();
     await page.waitForTimeout(200);
 
-    // Switch to Preview mode using the view mode selector
-    // The button text may vary, so use data attributes or position
-    const previewButton = page.locator('[data-testid="view-mode-preview"], button:has-text("Preview"), button').filter({ hasText: /Preview/i }).first();
-    if (await previewButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await previewButton.click();
-      await page.waitForTimeout(300);
-    }
+    // Switch to Preview mode using the view mode selector buttons
+    // Buttons use i18n text: "Preview" (en) or "预览" (zh)
+    const previewButton = page.locator('button').filter({ hasText: /^(Preview|预览)$/ }).first();
+    await previewButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await previewButton.click();
+    await page.waitForTimeout(500);
+
+    // Wait for preview container to be visible
+    const previewContainer = page.locator('.markdown-preview');
+    await previewContainer.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
 
     // Verify 2 checkboxes rendered
     const checkboxes = page.locator('input[data-interactive-checkbox]');
@@ -70,11 +73,13 @@ test.describe('Checkbox Interaction', () => {
     await page.waitForTimeout(200);
 
     // Switch to Preview mode
-    const previewButton = page.locator('button').filter({ hasText: /^Preview$/ }).first();
-    if (await previewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await previewButton.click();
-      await page.waitForTimeout(300);
-    }
+    const previewButton = page.locator('button').filter({ hasText: /^(Preview|预览)$/ }).first();
+    await previewButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await previewButton.click();
+    await page.waitForTimeout(500);
+
+    // Wait for preview container
+    await page.locator('.markdown-preview').waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
 
     // Click the checkbox
     const checkbox = page.locator('input[data-interactive-checkbox]').first();
@@ -85,11 +90,10 @@ test.describe('Checkbox Interaction', () => {
     await expect(checkbox).toBeChecked({ timeout: TEST_CONFIG.defaultTimeout });
 
     // Switch to Edit mode to verify content changed
-    const editButton = page.locator('button').filter({ hasText: /^Edit$/ }).first();
-    if (await editButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await editButton.click();
-      await page.waitForTimeout(300);
-    }
+    const editButton = page.locator('button').filter({ hasText: /^(Edit|编辑)$/ }).first();
+    await editButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await editButton.click();
+    await page.waitForTimeout(500);
 
     // Editor should contain "- [x] Click me"
     const editor = page.locator('textarea#note-editor');
@@ -118,11 +122,13 @@ test.describe('Checkbox Interaction', () => {
     await page.waitForTimeout(200);
 
     // Switch to Preview mode
-    const previewButton = page.locator('button').filter({ hasText: /^Preview$/ }).first();
-    if (await previewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await previewButton.click();
-      await page.waitForTimeout(300);
-    }
+    const previewButton = page.locator('button').filter({ hasText: /^(Preview|预览)$/ }).first();
+    await previewButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await previewButton.click();
+    await page.waitForTimeout(500);
+
+    // Wait for preview container
+    await page.locator('.markdown-preview').waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
 
     // Click checkbox and wait for autosave
     const checkbox = page.locator('input[data-interactive-checkbox]').first();
@@ -141,11 +147,10 @@ test.describe('Checkbox Interaction', () => {
     await page.waitForTimeout(200);
 
     // Switch to Edit mode and verify content
-    const editButton = page.locator('button').filter({ hasText: /^Edit$/ }).first();
-    if (await editButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await editButton.click();
-      await page.waitForTimeout(300);
-    }
+    const editButton = page.locator('button').filter({ hasText: /^(Edit|编辑)$/ }).first();
+    await editButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await editButton.click();
+    await page.waitForTimeout(500);
 
     const editor = page.locator('textarea#note-editor');
     await expect(editor).toContainText('- [x] Persist me', { timeout: TEST_CONFIG.defaultTimeout });
@@ -182,11 +187,13 @@ test.describe('Checkbox Interaction', () => {
     await page.waitForTimeout(200);
 
     // Switch to Preview mode
-    const previewButton = page.locator('button').filter({ hasText: /^Preview$/ }).first();
-    if (await previewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await previewButton.click();
-      await page.waitForTimeout(300);
-    }
+    const previewButton = page.locator('button').filter({ hasText: /^(Preview|预览)$/ }).first();
+    await previewButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await previewButton.click();
+    await page.waitForTimeout(500);
+
+    // Wait for preview container
+    await page.locator('.markdown-preview').waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
 
     // Only 2 checkboxes should render (not the one in code block)
     const checkboxes = page.locator('input[data-interactive-checkbox]');
@@ -198,11 +205,10 @@ test.describe('Checkbox Interaction', () => {
     await expect(secondCheckbox).toBeChecked({ timeout: TEST_CONFIG.defaultTimeout });
 
     // Switch to Edit mode
-    const editButton = page.locator('button').filter({ hasText: /^Edit$/ }).first();
-    if (await editButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await editButton.click();
-      await page.waitForTimeout(300);
-    }
+    const editButton = page.locator('button').filter({ hasText: /^(Edit|编辑)$/ }).first();
+    await editButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await editButton.click();
+    await page.waitForTimeout(500);
 
     const editor = page.locator('textarea#note-editor');
     const editorContent = await editor.inputValue();
@@ -238,11 +244,13 @@ test.describe('Checkbox Interaction', () => {
     await page.waitForTimeout(200);
 
     // Switch to Preview mode
-    const previewButton = page.locator('button').filter({ hasText: /^Preview$/ }).first();
-    if (await previewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await previewButton.click();
-      await page.waitForTimeout(300);
-    }
+    const previewButton = page.locator('button').filter({ hasText: /^(Preview|预览)$/ }).first();
+    await previewButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await previewButton.click();
+    await page.waitForTimeout(500);
+
+    // Wait for preview container
+    await page.locator('.markdown-preview').waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
 
     // Verify 3 checkboxes
     const checkboxes = page.locator('input[data-interactive-checkbox]');
@@ -262,11 +270,10 @@ test.describe('Checkbox Interaction', () => {
     await expect(thirdCheckbox).toBeChecked({ timeout: TEST_CONFIG.defaultTimeout });
 
     // Verify content in editor
-    const editButton = page.locator('button').filter({ hasText: /^Edit$/ }).first();
-    if (await editButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await editButton.click();
-      await page.waitForTimeout(300);
-    }
+    const editButton = page.locator('button').filter({ hasText: /^(Edit|编辑)$/ }).first();
+    await editButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await editButton.click();
+    await page.waitForTimeout(500);
 
     const editor = page.locator('textarea#note-editor');
     const editorContent = await editor.inputValue();
@@ -301,11 +308,13 @@ test.describe('Checkbox Interaction', () => {
     await page.waitForTimeout(200);
 
     // Switch to Preview mode
-    const previewButton = page.locator('button').filter({ hasText: /^Preview$/ }).first();
-    if (await previewButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await previewButton.click();
-      await page.waitForTimeout(300);
-    }
+    const previewButton = page.locator('button').filter({ hasText: /^(Preview|预览)$/ }).first();
+    await previewButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await previewButton.click();
+    await page.waitForTimeout(500);
+
+    // Wait for preview container
+    await page.locator('.markdown-preview').waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
 
     // Verify 4 checkboxes
     const checkboxes = page.locator('input[data-interactive-checkbox]');
@@ -317,11 +326,10 @@ test.describe('Checkbox Interaction', () => {
     await expect(thirdCheckbox).toBeChecked({ timeout: TEST_CONFIG.defaultTimeout });
 
     // Switch to Edit mode
-    const editButton = page.locator('button').filter({ hasText: /^Edit$/ }).first();
-    if (await editButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await editButton.click();
-      await page.waitForTimeout(300);
-    }
+    const editButton = page.locator('button').filter({ hasText: /^(Edit|编辑)$/ }).first();
+    await editButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
+    await editButton.click();
+    await page.waitForTimeout(500);
 
     const editor = page.locator('textarea#note-editor');
     const editorContent = await editor.inputValue();

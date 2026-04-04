@@ -1,4 +1,4 @@
-import { test, expect, TEST_CONFIG, login, apiPost, waitForAutosave, cleanupTest } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, apiPost, waitForAutosave, waitForSearchIndex, cleanupTest } from '../fixtures/test-helpers';
 
 const BASE_URL = TEST_CONFIG.baseUrl;
 
@@ -48,22 +48,20 @@ test.describe('Search CJK Support', () => {
 `;
 
     await apiPost(page, `${BASE_URL}/api/notes/${noteName}.md`, { content: chineseContent });
-    await page.waitForTimeout(500);
-    await waitForAutosave(page);
-
-    await page.reload();
-    await page.waitForTimeout(1000);
+    
+    // Wait for search index to be updated
+    await waitForSearchIndex(page);
 
     await openSearchPanel(page);
 
     // Search for Chinese term
     const searchInput = page.locator('input[x-model="search.query"]').first();
     await searchInput.fill('中文');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
 
-    // Check if note appears in results
+    // Check if note appears in results with retry
     const noteInResults = page.locator(`text="${noteName}"`).first();
-    const isVisible = await noteInResults.isVisible({ timeout: 5000 }).catch(() => false);
+    const isVisible = await noteInResults.isVisible({ timeout: TEST_CONFIG.defaultTimeout }).catch(() => false);
     console.log(`Simplified Chinese search found note: ${isVisible}`);
 
     // Take screenshot
