@@ -139,18 +139,21 @@ test.describe('Folder Management', () => {
     
     if (await deleteButton.isVisible({ timeout: 1000 }).catch(() => false)) {
       await deleteButton.click({ force: true });
-      
+
       // Confirm deletion dialog
       const confirmButton = page.locator('button:has-text("Delete"), button:has-text("Confirm")').first();
       if (await confirmButton.isVisible({ timeout: 2000 }).catch(() => false)) {
         await confirmButton.click();
       }
 
-      await page.waitForTimeout(1500);
+      // Wait for folder to be removed from UI
+      await page.waitForTimeout(500);
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForTimeout(500);
     }
 
     // Verify folder is gone
-    const folderExists = await page.locator(`.homepage-card h3:has-text("${folderName}")`).isVisible().catch(() => false);
+    const folderExists = await page.locator(`.homepage-card h3:has-text("${folderName}")`).isVisible({ timeout: 3000 }).catch(() => false);
     expect(folderExists).toBe(false);
   });
 });

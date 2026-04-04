@@ -1,32 +1,42 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, TEST_CONFIG, login } from '../fixtures/test-helpers';
 
 test.describe('Media Management', () => {
   test.beforeEach(async ({ page }) => {
-    // Login before each test
-    await page.goto('/login');
-    await page.fill('input[type="password"]', 'test-admin-password');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('/');
+    await login(page);
   });
 
   test('upload image via editor', async ({ page }) => {
-    // Create a new note
-    await page.click('[data-testid="new-note-btn"]');
-    await page.waitForTimeout(200);
+    // Create a new note via API
+    const testPrefix = `media_${Date.now()}`;
+    
+    await page.evaluate(async ({ prefix }) => {
+      await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: `${prefix}-note.md`,
+          content: `# Media Test Note`
+        })
+      });
+    }, { testPrefix });
+
+    // Reload and open the note
+    await page.reload();
+    await page.waitForTimeout(500);
+
+    const noteItem = page.locator(`text="${testPrefix}"`).first();
+    await noteItem.click();
+    await page.waitForTimeout(500);
 
     // Verify editor is visible and ready
-    await expect(page.locator('.editor')).toBeVisible({ timeout: 5000 });
-
-    // Note: The actual upload flow uses drag-and-drop or paste
-    // This test verifies the editor is ready for media upload
-    const editor = page.locator('textarea').first();
-    await expect(editor).toBeVisible();
+    const editor = page.locator('textarea#note-editor').first();
+    await expect(editor).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('display uploaded image in note', async ({ page }) => {
     // Create note with image reference
     const testPrefix = `test_${Date.now()}`;
-    
+
     await page.evaluate(async ({ prefix }) => {
       const response = await fetch('/api/notes', {
         method: 'POST',
@@ -39,11 +49,17 @@ test.describe('Media Management', () => {
       return response.json();
     }, { testPrefix });
 
-    await page.goto(`/notes/${testPrefix}-note.md`);
-    await page.waitForTimeout(300);
+    // Reload to see the note in sidebar
+    await page.reload();
+    await page.waitForTimeout(500);
+
+    // Open the note
+    const noteItem = page.locator(`text="${testPrefix}"`).first();
+    await noteItem.click();
+    await page.waitForTimeout(500);
 
     // Verify note content is displayed
-    await expect(page.locator('.markdown-preview')).toContainText('Test Note');
+    await expect(page.locator('.markdown-preview')).toContainText('Test Note', { timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('upload file size validation', async ({ page }) => {

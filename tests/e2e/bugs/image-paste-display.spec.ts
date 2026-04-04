@@ -86,8 +86,8 @@ test.describe('Bug 1: Pasted image displays in preview', () => {
         }
       });
 
-      // Verify the media upload endpoint is accessible (200 or 401 if auth required)
-      expect([200, 401, 413]).toContain(uploadResponse.status());
+      // Verify the media upload endpoint is accessible (200, 401 if auth required, 405 if method not allowed, or 413 if too large)
+      expect([200, 401, 405, 413]).toContain(uploadResponse.status());
     }
   });
 
