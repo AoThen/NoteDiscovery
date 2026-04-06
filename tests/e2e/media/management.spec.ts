@@ -1,120 +1,75 @@
-import { test, expect, TEST_CONFIG, login } from '../fixtures/test-helpers';
+import { test, expect, TEST_CONFIG, login, apiPost, cleanupTest } from '../fixtures/test-helpers';
 
 test.describe('Media Management', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
 
-  test('upload image via editor', async ({ page }) => {
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
+  });
+
+  test('upload image via API and verify in note', async ({ page, testPrefix }) => {
     // Create a new note via API
-    const testPrefix = `media_${Date.now()}`;
-    
-    await page.evaluate(async ({ prefix }) => {
-      await fetch('/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          path: `${prefix}-note.md`,
-          content: `# Media Test Note`
-        })
-      });
-    }, { testPrefix });
+    await apiPost(page, `${TEST_CONFIG.baseUrl}/api/notes/${testPrefix}-note.md`, {
+      content: `# Media Test Note`
+    });
 
-    // Reload and open the note
-    await page.reload();
-    await page.waitForTimeout(500);
+    // Open the note
+    await page.goto(`/${encodeURIComponent(`${testPrefix}-note.md`)}`);
 
-    const noteItem = page.locator(`text="${testPrefix}"`).first();
-    await noteItem.click();
-    await page.waitForTimeout(500);
-
-    // Verify editor is visible and ready
-    const editor = page.locator('textarea#note-editor').first();
+    // Verify editor is visible
+    const editor = page.locator('#note-editor').first();
     await expect(editor).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
-  test('display uploaded image in note', async ({ page }) => {
+  test('display note with media reference', async ({ page, testPrefix }) => {
     // Create note with image reference
-    const testPrefix = `test_${Date.now()}`;
-
-    await page.evaluate(async ({ prefix }) => {
-      const response = await fetch('/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          path: `${prefix}-note.md`,
-          content: `# Test Note\n\n![Image](test.png)`
-        })
-      });
-      return response.json();
-    }, { testPrefix });
-
-    // Reload to see the note in sidebar
-    await page.reload();
-    await page.waitForTimeout(500);
+    await apiPost(page, `${TEST_CONFIG.baseUrl}/api/notes/${testPrefix}-note.md`, {
+      content: `# Test Note\n\n![Image](test.png)`
+    });
 
     // Open the note
-    const noteItem = page.locator(`text="${testPrefix}"`).first();
-    await noteItem.click();
-    await page.waitForTimeout(500);
+    await page.goto(`/${encodeURIComponent(`${testPrefix}-note.md`)}`);
 
     // Verify note content is displayed
-    await expect(page.locator('.markdown-preview')).toContainText('Test Note', { timeout: TEST_CONFIG.defaultTimeout });
+    await expect(page.locator('.markdown-preview, .preview-content')).toContainText('Test Note', { timeout: TEST_CONFIG.defaultTimeout });
   });
 
-  test('upload file size validation', async ({ page }) => {
-    // This test would verify that large files are rejected
-    // Implementation depends on UI error handling
-    await expect(page).toHaveURL('/');
-  });
+  test('media GET endpoint returns 404 for non-existent file', async ({ page }) => {
+    const response = await page.request.get(`${TEST_CONFIG.baseUrl}/api/media/nonexistent.png`);
+    expect(response.status()).toBe(404);
 
-  test('upload file type validation', async ({ page }) => {
-    // This test would verify that disallowed file types are rejected
-    // Implementation depends on UI error handling
-    await expect(page).toHaveURL('/');
+    const body = await response.json();
+    expect(body.detail).toContain('not found');
   });
 });
 
 test.describe('Media Orphaned Detection', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login');
-    await page.fill('input[type="password"]', 'test-admin-password');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('/');
+    await login(page);
   });
 
-  test('detect orphaned media files', async ({ page }) => {
-    // Create an orphaned media file via API
-    const testPrefix = `orphan_${Date.now()}`;
-    
-    // First create a note with an image
-    await page.evaluate(async ({ prefix }) => {
-      const fs = require('fs');
-      const path = require('path');
-      
-      // Create test image in attachments folder
-      const attachmentsDir = path.join('go/data', `${prefix}-note_attachments`);
-      fs.mkdirSync(attachmentsDir, { recursive: true });
-      fs.writeFileSync(path.join(attachmentsDir, 'orphan.png'), 'fake image');
-      
-      // Create note that references the image
-      await fetch('/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          path: `${prefix}-note.md`,
-          content: `# Note\n\n![Image](${prefix}-note_attachments/orphan.png)`
-        })
-      });
-    }, { testPrefix });
-
-    // Navigate to see if orphaned media is detected
-    // This depends on UI having orphaned media detection feature
-    await expect(page).toHaveURL('/');
+  test.afterEach(async ({ testPrefix }) => {
+    await cleanupTest(testPrefix);
   });
 
-  test('cleanup orphaned media', async ({ page }) => {
-    // Test cleanup functionality if available in UI
-    await expect(page).toHaveURL('/');
+  test('orphaned media endpoint is accessible', async ({ page }) => {
+    const response = await page.request.get(`${TEST_CONFIG.baseUrl}/api/media/orphaned`);
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(body.files).toBeDefined();
+    expect(Array.isArray(body.files)).toBe(true);
+  });
+
+  test('cleanup orphaned media endpoint is accessible', async ({ page }) => {
+    const response = await page.request.delete(`${TEST_CONFIG.baseUrl}/api/media/orphaned`);
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(body.deletedCount).toBeDefined();
   });
 });

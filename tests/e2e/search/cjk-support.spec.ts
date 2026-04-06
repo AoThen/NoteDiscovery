@@ -59,15 +59,9 @@ test.describe('Search CJK Support', () => {
     await searchInput.fill('中文');
     await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
 
-    // Check if note appears in results with retry
+    // Check if note appears in results
     const noteInResults = page.locator(`text="${noteName}"`).first();
-    const isVisible = await noteInResults.isVisible({ timeout: TEST_CONFIG.defaultTimeout }).catch(() => false);
-    console.log(`Simplified Chinese search found note: ${isVisible}`);
-
-    // Take screenshot
-    await page.screenshot({ path: `config/test-results/search-simplified-chinese-${testPrefix}.png`, fullPage: true });
-
-    expect(isVisible).toBe(true);
+    await expect(noteInResults).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('search traditional Chinese characters', async ({ page, testPrefix }) => {
@@ -104,12 +98,7 @@ test.describe('Search CJK Support', () => {
 
     // Check if note appears in results
     const noteInResults = page.locator(`text="${noteName}"`).first();
-    const isVisible = await noteInResults.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`Traditional Chinese search found note: ${isVisible}`);
-
-    await page.screenshot({ path: `config/test-results/search-traditional-chinese-${testPrefix}.png`, fullPage: true });
-
-    expect(isVisible).toBe(true);
+    await expect(noteInResults).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('search Japanese Hiragana', async ({ page, testPrefix }) => {
@@ -146,12 +135,7 @@ test.describe('Search CJK Support', () => {
 
     // Check if note appears in results
     const noteInResults = page.locator(`text="${noteName}"`).first();
-    const isVisible = await noteInResults.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`Japanese Hiragana search found note: ${isVisible}`);
-
-    await page.screenshot({ path: `config/test-results/search-hiragana-${testPrefix}.png`, fullPage: true });
-
-    expect(isVisible).toBe(true);
+    await expect(noteInResults).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('search Japanese Katakana', async ({ page, testPrefix }) => {
@@ -188,12 +172,7 @@ test.describe('Search CJK Support', () => {
 
     // Check if note appears in results
     const noteInResults = page.locator(`text="${noteName}"`).first();
-    const isVisible = await noteInResults.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`Japanese Katakana search found note: ${isVisible}`);
-
-    await page.screenshot({ path: `config/test-results/search-katakana-${testPrefix}.png`, fullPage: true });
-
-    expect(isVisible).toBe(true);
+    await expect(noteInResults).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('search Japanese Kanji', async ({ page, testPrefix }) => {
@@ -230,12 +209,7 @@ test.describe('Search CJK Support', () => {
 
     // Check if note appears in results
     const noteInResults = page.locator(`text="${noteName}"`).first();
-    const isVisible = await noteInResults.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`Japanese Kanji search found note: ${isVisible}`);
-
-    await page.screenshot({ path: `config/test-results/search-kanji-${testPrefix}.png`, fullPage: true });
-
-    expect(isVisible).toBe(true);
+    await expect(noteInResults).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('search Korean Hangul', async ({ page, testPrefix }) => {
@@ -272,12 +246,7 @@ test.describe('Search CJK Support', () => {
 
     // Check if note appears in results
     const noteInResults = page.locator(`text="${noteName}"`).first();
-    const isVisible = await noteInResults.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`Korean Hangul search found note: ${isVisible}`);
-
-    await page.screenshot({ path: `config/test-results/search-hangul-${testPrefix}.png`, fullPage: true });
-
-    expect(isVisible).toBe(true);
+    await expect(noteInResults).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('search mixed CJK content', async ({ page, testPrefix }) => {
@@ -298,42 +267,31 @@ test.describe('Search CJK Support', () => {
 `;
 
     await apiPost(page, `${BASE_URL}/api/notes/${noteName}.md`, { content: mixedContent });
-    await page.waitForTimeout(500);
     await waitForAutosave(page);
-
-    await page.reload();
-    await page.waitForTimeout(1000);
 
     await openSearchPanel(page);
 
-    // Search for Chinese term in mixed content
     const searchInput = page.locator('input[x-model="search.query"]').first();
+
+    // Search for Chinese term - should find the note
     await searchInput.fill('中文');
-    await page.waitForTimeout(1500);
-
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
     const noteInResults1 = page.locator(`text="${noteName}"`).first();
-    const isVisible1 = await noteInResults1.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`Mixed CJK - Chinese search: ${isVisible1}`);
+    await expect(noteInResults1).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
 
-    // Clear and search for Japanese term
+    // Clear and search for Japanese term - should also find the note
+    await searchInput.clear();
     await searchInput.fill('日本語');
-    await page.waitForTimeout(1500);
-
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
     const noteInResults2 = page.locator(`text="${noteName}"`).first();
-    const isVisible2 = await noteInResults2.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`Mixed CJK - Japanese search: ${isVisible2}`);
+    await expect(noteInResults2).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
 
-    // Clear and search for Korean term
+    // Clear and search for Korean term - should also find the note
+    await searchInput.clear();
     await searchInput.fill('한국어');
-    await page.waitForTimeout(1500);
-
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
     const noteInResults3 = page.locator(`text="${noteName}"`).first();
-    const isVisible3 = await noteInResults3.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`Mixed CJK - Korean search: ${isVisible3}`);
-
-    await page.screenshot({ path: `config/test-results/search-mixed-cjk-${testPrefix}.png`, fullPage: true });
-
-    expect(isVisible1 || isVisible2 || isVisible3).toBe(true);
+    await expect(noteInResults3).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('CJK partial match search', async ({ page, testPrefix }) => {
@@ -348,11 +306,7 @@ This is a Chinese note for testing partial match.
 `;
 
     await apiPost(page, `${BASE_URL}/api/notes/${noteName}.md`, { content });
-    await page.waitForTimeout(500);
     await waitForAutosave(page);
-
-    await page.reload();
-    await page.waitForTimeout(1000);
 
     await openSearchPanel(page);
 
@@ -360,23 +314,16 @@ This is a Chinese note for testing partial match.
 
     // Search for partial match - single character
     await searchInput.fill('搜');
-    await page.waitForTimeout(1500);
-
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
     const noteInResults1 = page.locator(`text="${noteName}"`).first();
-    const isVisible1 = await noteInResults1.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`CJK partial match (single char): ${isVisible1}`);
+    await expect(noteInResults1).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
 
     // Search for partial match - two characters
+    await searchInput.clear();
     await searchInput.fill('测试');
-    await page.waitForTimeout(1500);
-
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
     const noteInResults2 = page.locator(`text="${noteName}"`).first();
-    const isVisible2 = await noteInResults2.isVisible({ timeout: 5000 }).catch(() => false);
-    console.log(`CJK partial match (two chars): ${isVisible2}`);
-
-    await page.screenshot({ path: `config/test-results/search-cjk-partial-${testPrefix}.png`, fullPage: true });
-
-    expect(isVisible1 || isVisible2).toBe(true);
+    await expect(noteInResults2).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 
   test('CJK search result highlight', async ({ page, testPrefix }) => {
@@ -412,17 +359,8 @@ This sentence contains the search keyword for testing highlight.
       // Check if editor has the content
       const editor = page.locator('#note-editor').first();
       const editorContent = await editor.inputValue();
-      
       expect(editorContent).toContain('搜索');
-      console.log(`CJK highlight - note opened with content`);
-
-      // Check for match navigation (if available)
-      const matchNav = page.locator('text=/\\d+\\s*\\/\\s*\\d+/').first();
-      const hasMatchNav = await matchNav.isVisible({ timeout: 2000 }).catch(() => false);
-      console.log(`CJK highlight - match navigation: ${hasMatchNav}`);
     }
-
-    await page.screenshot({ path: `config/test-results/search-cjk-highlight-${testPrefix}.png`, fullPage: true });
   });
 
   test('CJK search with line navigation', async ({ page, testPrefix }) => {
@@ -463,31 +401,8 @@ This sentence contains the search keyword for testing highlight.
       // Check editor state
       const editor = page.locator('#note-editor').first();
       const editorContent = await editor.inputValue();
-      
       expect(editorContent).toContain('导航');
-      console.log(`CJK navigation - note opened`);
-
-      // Check selection/highlight
-      const result = await page.evaluate(() => {
-        const editor = document.getElementById('note-editor') as HTMLTextAreaElement;
-        if (!editor) return { error: 'Editor not found' };
-
-        const selectionStart = editor.selectionStart;
-        const selectionEnd = editor.selectionEnd;
-        const selectedText = editor.value.substring(selectionStart, selectionEnd);
-
-        return {
-          selectionStart,
-          selectionEnd,
-          selectedText,
-          hasSelection: selectedText.length > 0
-        };
-      });
-
-      console.log(`CJK navigation - selection: ${JSON.stringify(result)}`);
     }
-
-    await page.screenshot({ path: `config/test-results/search-cjk-navigation-${testPrefix}.png`, fullPage: true });
   });
 
   test('CJK search no results handling', async ({ page, testPrefix }) => {
@@ -511,31 +426,24 @@ This is a test note.
     
     // Search for non-existent CJK term
     await searchInput.fill('不存在的关键词 XYZ');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
 
-    // Check for no results message
-    const noResultsMsg = page.locator('text=/No results|没有结果|0 result|該当なし/i').first();
-    const hasNoResults = await noResultsMsg.isVisible({ timeout: 3000 }).catch(() => false);
-    console.log(`CJK no results message shown: ${hasNoResults}`);
-
-    // Should not have any result items
-    const resultItems = page.locator('.hover-accent.cursor-pointer, [class*="hover-accent"]');
-    const count = await resultItems.count();
-    console.log(`CJK no results - result count: ${count}`);
-
-    await page.screenshot({ path: `config/test-results/search-cjk-no-results-${testPrefix}.png`, fullPage: true });
+    // Should not have the original note in results
+    const noteInResults = page.locator(`text="${noteName}"`).first();
+    const isVisible = await noteInResults.isVisible({ timeout: 2000 }).catch(() => false);
+    expect(isVisible).toBe(false);
   });
 
   test('CJK search clear and re-search', async ({ page, testPrefix }) => {
     const noteName1 = `${testPrefix}_cjk_clear1`;
     const noteName2 = `${testPrefix}_cjk_clear2`;
-    
+
     const content1 = `# CJK Clear Test 1
 
 第一个笔记的内容。
 Content for first note.
 `;
-    
+
     const content2 = `# CJK Clear Test 2
 
 第二个笔记的内容。
@@ -544,43 +452,26 @@ Content for second note.
 
     await apiPost(page, `${BASE_URL}/api/notes/${noteName1}.md`, { content: content1 });
     await apiPost(page, `${BASE_URL}/api/notes/${noteName2}.md`, { content: content2 });
-    await page.waitForTimeout(500);
     await waitForAutosave(page);
-
-    await page.reload();
-    await page.waitForTimeout(1000);
 
     await openSearchPanel(page);
 
     const searchInput = page.locator('input[x-model="search.query"]').first();
 
-    // First search
+    // First search - should find note1
     await searchInput.fill('第一个');
-    await page.waitForTimeout(1500);
-
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
     const result1 = page.locator(`text="${noteName1}"`).first();
-    const isVisible1 = await result1.isVisible({ timeout: 3000 }).catch(() => false);
-    console.log(`First search result visible: ${isVisible1}`);
+    await expect(result1).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
 
-    // Clear search
-    await searchInput.fill('');
-    await page.waitForTimeout(500);
+    // Clear search - should show all notes again
+    await searchInput.clear();
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay);
 
-    // Verify all notes are visible after clear
-    const allNotes = page.locator('.note-item, [class*="note-item"]');
-    const countAfterClear = await allNotes.count();
-    console.log(`Notes visible after clear: ${countAfterClear}`);
-
-    // Second search
+    // Second search - should find note2
     await searchInput.fill('第二个');
-    await page.waitForTimeout(1500);
-
+    await page.waitForTimeout(TEST_CONFIG.searchDebounceDelay + 500);
     const result2 = page.locator(`text="${noteName2}"`).first();
-    const isVisible2 = await result2.isVisible({ timeout: 3000 }).catch(() => false);
-    console.log(`Second search result visible: ${isVisible2}`);
-
-    await page.screenshot({ path: `config/test-results/search-cjk-clear-research-${testPrefix}.png`, fullPage: true });
-
-    expect(isVisible1 || isVisible2).toBe(true);
+    await expect(result2).toBeVisible({ timeout: TEST_CONFIG.defaultTimeout });
   });
 });

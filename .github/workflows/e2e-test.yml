@@ -33,8 +33,7 @@ jobs:
 
     - name: Install Playwright
       run: |
-        npm init -y
-        npm install -D @playwright/test
+        npm ci
         npx playwright install --with-deps chromium
 
     - name: Build Go server

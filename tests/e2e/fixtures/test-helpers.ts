@@ -1,4 +1,4 @@
-import { test as base, expect, Page, BrowserContext, APIRequestContext } from '@playwright/test';
+import { test as base, expect, Page } from '@playwright/test';
 
 const TEST_CONFIG = {
   baseUrl: 'http://localhost:9000',
@@ -33,28 +33,6 @@ async function ensureCsrfToken(page: Page): Promise<string> {
     csrfToken = await getCsrfToken(page);
   }
   return csrfToken || '';
-}
-
-async function apiRequest(
-  page: Page,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
-  url: string,
-  options?: { data?: any, headers?: Record<string, string> }
-): Promise<Response> {
-  const csrfToken = await getCsrfToken(page);
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...options?.headers,
-  };
-  if (csrfToken && method !== 'GET') {
-    headers['X-CSRF-Token'] = csrfToken;
-  }
-  const response = await page.request.fetch(url, {
-    method,
-    headers,
-    data: options?.data ? JSON.stringify(options.data) : undefined,
-  });
-  return response as any;
 }
 
 async function apiPost(page: Page, url: string, data?: any): Promise<any> {
@@ -131,44 +109,6 @@ async function waitForSearchIndex(page: Page, timeout?: number): Promise<void> {
   }
 }
 
-/**
- * Wait for cache TTL to expire.
- */
-async function waitForCacheExpiry(page: Page): Promise<void> {
-  await page.waitForTimeout(TEST_CONFIG.cacheTtl);
-}
-
-/**
- * Wait for page to be fully loaded with Alpine.js initialized.
- * Replaces: goto + waitForTimeout(1000-2000)
- */
-async function waitForPageReady(page: Page, timeout?: number): Promise<void> {
-  await page.waitForLoadState('domcontentloaded');
-  await page.waitForSelector('[x-data]', { timeout: timeout || TEST_CONFIG.defaultTimeout });
-  await page.waitForTimeout(200);
-}
-
-/**
- * Wait for a specific note to appear in the sidebar/note list.
- * Replaces: create note + waitForTimeout(2000) + reload
- */
-async function waitForNoteInSidebar(page: Page, noteName: string, timeout?: number): Promise<void> {
-  const noteItem = page.locator(`text="${noteName}"`).first();
-  await noteItem.waitFor({ state: 'visible', timeout: timeout || TEST_CONFIG.defaultTimeout });
-}
-
-/**
- * Wait for editor to load with expected content after navigating to a note.
- */
-async function waitForEditorLoaded(page: Page, expectedContent?: string, timeout?: number): Promise<void> {
-  const editor = page.locator('#note-editor').first();
-  await editor.waitFor({ state: 'visible', timeout: timeout || TEST_CONFIG.defaultTimeout });
-  if (expectedContent) {
-    const escaped = expectedContent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    await expect(editor).toHaveValue(new RegExp(escaped), { timeout: timeout || TEST_CONFIG.defaultTimeout });
-  }
-}
-
 // --- Navigation Helpers ---
 
 async function login(page: Page, password: string = TEST_CONFIG.testPassword): Promise<void> {
@@ -202,82 +142,9 @@ async function logout(page: Page): Promise<void> {
   ]);
 }
 
-// --- CRUD Helpers ---
-
-async function createNote(page: Page, name: string, content: string = ''): Promise<void> {
-  const newButton = page.locator('button:has-text("New"), [data-testid="new-note-btn"]').first();
-  await newButton.click();
-
-  const nameInput = page.locator('input[placeholder*="name"], input[placeholder*="Name"], input[name="noteName"]').first();
-  await nameInput.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
-  await nameInput.fill(name);
-  await nameInput.press('Enter');
-
-  await page.waitForSelector('textarea#note-editor, .editor textarea, [data-testid="note-editor"]', {
-    timeout: TEST_CONFIG.defaultTimeout
-  });
-
-  if (content) {
-    const editor = page.locator('textarea#note-editor, .editor textarea, [data-testid="note-editor"]').first();
-    await editor.fill(content);
-    await waitForAutosave(page);
-  }
-}
-
-async function deleteNote(page: Page, noteName: string): Promise<void> {
-  const noteItem = page.locator(`text="${noteName}"`).first();
-  await noteItem.click({ button: 'right' });
-
-  const deleteOption = page.locator('text=Delete, [data-testid="delete-note"]').first();
-  await deleteOption.click();
-
-  const confirmButton = page.locator('button:has-text("Delete"), button:has-text("Confirm")').first();
-  if (await confirmButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await confirmButton.click();
-  }
-
-  await page.waitForTimeout(200);
-}
-
-async function createFolder(page: Page, name: string, parentFolder?: string): Promise<void> {
-  if (parentFolder) {
-    const parent = page.locator(`text="${parentFolder}"`).first();
-    await parent.click({ button: 'right' });
-  } else {
-    const newDropdown = page.locator('button:has-text("New")').first();
-    await newDropdown.click();
-  }
-
-  const newFolderOption = page.locator('text=New Folder, [data-testid="new-folder"]').first();
-  await newFolderOption.click();
-
-  const nameInput = page.locator('input[placeholder*="folder"], input[placeholder*="Folder"]').first();
-  await nameInput.waitFor({ state: 'visible', timeout: TEST_CONFIG.defaultTimeout });
-  await nameInput.fill(name);
-  await nameInput.press('Enter');
-
-  await page.waitForTimeout(200);
-}
-
-async function deleteFolder(page: Page, folderName: string): Promise<void> {
-  const folderItem = page.locator(`text="${folderName}"`).first();
-  await folderItem.click({ button: 'right' });
-
-  const deleteOption = page.locator('text=Delete, [data-testid="delete-folder"]').first();
-  await deleteOption.click();
-
-  const confirmButton = page.locator('button:has-text("Delete"), button:has-text("Confirm")').first();
-  if (await confirmButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await confirmButton.click();
-  }
-
-  await page.waitForTimeout(200);
-}
-
 // --- Test Fixtures ---
 
 type TestFixtures = {
-  authenticatedPage: Page;
   testPrefix: string;
 };
 
@@ -286,15 +153,9 @@ export const test = base.extend<TestFixtures>({
     const prefix = generateUniqueTestPrefix();
     await use(prefix);
   },
-
-  authenticatedPage: async ({ page }, use) => {
-    await login(page);
-    await use(page);
-    await logout(page);
-  },
 });
 
-// --- Per-test cleanup hook: call this in afterEach to cleanup test data ---
+// --- Per-test cleanup hook ---
 
 async function cleanupTestData(baseUrl: string, testPrefix: string): Promise<void> {
   try {
@@ -337,23 +198,13 @@ async function cleanupTest(testPrefix: string): Promise<void> {
 export {
   expect,
   TEST_CONFIG,
-  generateUniqueTestPrefix,
   waitForAutosave,
   waitForSearchDebounce,
-  waitForCacheExpiry,
   waitForSearchIndex,
-  waitForPageReady,
-  waitForNoteInSidebar,
-  waitForEditorLoaded,
   login,
   logout,
-  createNote,
-  deleteNote,
-  createFolder,
-  deleteFolder,
   getCsrfToken,
   ensureCsrfToken,
-  apiRequest,
   apiPost,
   apiDelete,
   cleanupTest,
