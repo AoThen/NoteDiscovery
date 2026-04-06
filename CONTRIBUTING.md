@@ -71,14 +71,17 @@ git checkout -b fix/your-bug-fix
 ### 4. Test Your Changes
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Run the Go application (recommended)
+cd go && go run cmd/server/main.go
 
-# Run the application
-python run.py
+# Or use Docker (Go backend)
+cd docker/compose && docker-compose -f development.yml up
 
-# Or use Docker
-docker-compose up
+# Run Go tests
+cd go && go test ./... -race
+
+# Run E2E tests (requires running server)
+npx playwright test --config=tests/playwright.config.ts --project=chromium
 ```
 
 ### 5. Commit Your Changes
@@ -103,18 +106,22 @@ Then create a pull request on GitHub with:
 
 ## 📝 Code Style Guidelines
 
-### Python
+### Go
 
-- Follow PEP 8 style guide
-- Use type hints where appropriate
+- Follow standard Go conventions (`gofmt`, `go vet`)
+- Use descriptive variable and function names
 - Keep functions focused and small
-- Add docstrings for public functions/classes
+- Add comments for complex logic
+- Return errors explicitly, don't panic
+- Use table-driven tests
 
 ### JavaScript
 
 - Use modern ES6+ syntax
 - Keep functions focused and small
 - Comment complex logic
+- Use 4-space indentation
+- Prefer single quotes for strings
 
 ### General
 
@@ -240,7 +247,7 @@ When reporting bugs, please include:
 - Steps to reproduce
 - Expected behavior
 - Actual behavior
-- Environment (OS, Python version, Docker, etc.)
+- Environment (OS, Go version, Docker, browser)
 - Error messages or logs
 - Screenshots if applicable
 

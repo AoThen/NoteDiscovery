@@ -37,11 +37,11 @@ GoNote 为单用户部署提供了简单的密码保护功能。启用后，用�
 密钥用于加密会话 Cookie。生成一个随机密钥：
 
 ```bash
-# Docker
-docker exec -it gonote python -c "import secrets; print(secrets.token_hex(32))"
+# 使用 openssl（推荐）
+openssl rand -hex 32
 
-# 本地
-python -c "import secrets; print(secrets.token_hex(32))"
+# 使用 Docker
+docker exec -it gonote sh -c 'openssl rand -hex 32'
 ```
 
 **保存这个密钥** — 第二步需要用到。
@@ -81,11 +81,11 @@ authentication:
 
 **生成哈希值：**
 ```bash
-# Docker
-docker exec -it gonote python generate_password.py
+# 使用 Go bcrypt
+cd go && go run tools/hash_password.go your_password
 
-# 本地
-python generate_password.py
+# 使用 htpasswd（如可用）
+htpasswd -bnBC 12 "" your_password | tr -d ':\n'
 ```
 
 **然后配置：**
@@ -107,8 +107,8 @@ docker-compose restart
 # Docker run
 docker restart gonote
 
-# 本地
-python run.py
+# 本地（Go 后端）
+cd go && go run cmd/server/main.go
 ```
 
 访问 `http://localhost:9000` — 你将被重定向到登录页面。

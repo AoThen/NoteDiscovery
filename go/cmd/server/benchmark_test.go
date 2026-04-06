@@ -13,6 +13,7 @@ import (
 
 // BenchmarkSearchLatency benchmarks search functionality with different dataset sizes
 func BenchmarkSearchLatency(b *testing.B) {
+	b.ReportAllocs()
 	sizes := []int{100, 1000}
 
 	for _, size := range sizes {
@@ -47,6 +48,7 @@ func BenchmarkSearchLatency(b *testing.B) {
 
 // BenchmarkIndexedSearchLatency benchmarks indexed search functionality
 func BenchmarkIndexedSearchLatency(b *testing.B) {
+	b.ReportAllocs()
 	sizes := []int{100, 1000}
 
 	for _, size := range sizes {
@@ -85,6 +87,7 @@ func BenchmarkIndexedSearchLatency(b *testing.B) {
 
 // BenchmarkNoteListLatency benchmarks note listing with different dataset sizes
 func BenchmarkNoteListLatency(b *testing.B) {
+	b.ReportAllocs()
 	sizes := []int{100, 1000, 5000}
 
 	for _, size := range sizes {
@@ -118,6 +121,7 @@ func BenchmarkNoteListLatency(b *testing.B) {
 
 // BenchmarkCacheOperations benchmarks cache Set and Get operations
 func BenchmarkCacheOperations(b *testing.B) {
+	b.ReportAllocs()
 	cache := services.NewCache(1000, 15*time.Second)
 	defer cache.StopCleanup()
 
@@ -145,6 +149,7 @@ func BenchmarkCacheOperations(b *testing.B) {
 
 // BenchmarkCacheHitRate benchmarks cache hit rate under different access patterns
 func BenchmarkCacheHitRate(b *testing.B) {
+	b.ReportAllocs()
 	cache := services.NewCache(100, 15*time.Second)
 	defer cache.StopCleanup()
 
@@ -172,6 +177,7 @@ func BenchmarkCacheHitRate(b *testing.B) {
 
 // BenchmarkPagination benchmarks pagination overhead
 func BenchmarkPagination(b *testing.B) {
+	b.ReportAllocs()
 	// Create a large slice of notes
 	notes := make([]models.Note, 10000)
 	for i := range notes {

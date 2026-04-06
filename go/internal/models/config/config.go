@@ -364,22 +364,3 @@ func DetectHTTPSAndSetSecureCookie(cfg *Config) (detected bool, source string) {
 	return false, ""
 }
 
-// PrintStartupInfo prints startup information
-func PrintStartupInfo(cfg *Config) {
-	authStatus := "DISABLED"
-	if cfg.Authentication.Enabled {
-		authStatus = "ENABLED"
-	}
-
-	authSource := "config.yaml"
-	if os.Getenv("AUTHENTICATION_ENABLED") != "" {
-		authSource = "AUTHENTICATION_ENABLED env var"
-	}
-
-	println("🔐 Authentication", authStatus, "(from", authSource+")")
-	println("🌐 CORS allowed origins:", strings.Join(cfg.Server.AllowedOrigins, ", "))
-
-	if DemoMode {
-		println("🎭 DEMO MODE enabled - Rate limiting active")
-	}
-}

@@ -37,11 +37,14 @@ For any deployment exposed to a network, follow these steps:
 The secret key encrypts session cookies. Generate a random one:
 
 ```bash
-# Docker
-docker exec -it gonote python -c "import secrets; print(secrets.token_hex(32))"
+# Using openssl (recommended)
+openssl rand -hex 32
 
-# Local
-python -c "import secrets; print(secrets.token_hex(32))"
+# Using Go
+cd go && go run -e 'package main; import ("crypto/rand"; "fmt"); func main() { b := make([]byte, 32); rand.Read(b); fmt.Printf("%x\n", b) }'
+
+# Using Docker
+docker exec -it gonote sh -c 'openssl rand -hex 32'
 ```
 
 **Save this key** — you'll need it in Step 2.
@@ -81,11 +84,11 @@ For users who prefer to hash passwords themselves.
 
 **Generate a hash:**
 ```bash
-# Docker
-docker exec -it gonote python generate_password.py
+# Using Go bcrypt
+cd go && go run tools/hash_password.go your_password
 
-# Local
-python generate_password.py
+# Using htpasswd (if available)
+htpasswd -bnBC 12 "" your_password | tr -d ':\n'
 ```
 
 **Then configure:**
@@ -107,8 +110,8 @@ docker-compose restart
 # Docker run
 docker restart gonote
 
-# Local
-python run.py
+# Local (Go backend)
+cd go && go run cmd/server/main.go
 ```
 
 Navigate to `http://localhost:8000` — you'll be redirected to the login page.

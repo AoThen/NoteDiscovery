@@ -26,7 +26,7 @@ func TestSystemHandler_HealthCheck(t *testing.T) {
 	cfg := &config.Config{
 		App: config.AppConfig{
 			Name:    "GoNote",
-			Version: "0.3.0",
+			Version: "0.25",
 		},
 	}
 	handler := NewSystemHandler(cfg)
@@ -45,14 +45,14 @@ func TestSystemHandler_HealthCheck(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "ok", health.Status)
 	assert.Equal(t, "GoNote", health.App)
-	assert.Equal(t, "0.3.0", health.Version)
+	assert.Equal(t, "0.25", health.Version)
 }
 
 func TestSystemHandler_GetConfig(t *testing.T) {
 	cfg := &config.Config{
 		App: config.AppConfig{
 			Name:    "GoNote",
-			Version: "0.3.0",
+			Version: "0.25",
 		},
 		Search: config.SearchConfig{
 			Enabled: true,
@@ -76,9 +76,36 @@ func TestSystemHandler_GetConfig(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&configResp)
 	assert.NoError(t, err)
 	assert.Equal(t, "GoNote", configResp.Name)
-	assert.Equal(t, "0.3.0", configResp.Version)
+	assert.Equal(t, "0.25", configResp.Version)
 	assert.True(t, configResp.SearchEnabled)
 	assert.True(t, configResp.Authentication.Enabled)
+}
+
+func TestSystemHandler_GetConfig_AuthDisabled(t *testing.T) {
+	cfg := &config.Config{
+		App: config.AppConfig{
+			Name:    "GoNote",
+			Version: "0.25",
+		},
+		Authentication: config.AuthConfig{
+			Enabled: false,
+		},
+	}
+	handler := NewSystemHandler(cfg)
+
+	app := fiber.New()
+	app.Get("/api/config", handler.GetConfig)
+
+	req := httptest.NewRequest("GET", "/api/config", nil)
+	resp, err := app.Test(req, -1)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var configResp models.ConfigResponse
+	err = json.NewDecoder(resp.Body).Decode(&configResp)
+	assert.NoError(t, err)
+	assert.False(t, configResp.Authentication.Enabled)
 }
 
 func TestSystemHandler_ServiceWorker_FileExists(t *testing.T) {
