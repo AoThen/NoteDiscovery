@@ -2884,7 +2884,7 @@
                                 @blur="if (note.current) renameNote()"
                                 :readonly="!note.current"
                                 class="text-xl font-semibold border-none focus:outline-none focus:ring-2 rounded px-3 py-1.5"
-                                :style="'background-color: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-primary); min-width: 150px; max-width: 300px;' + (!note.current ? ' cursor: default; opacity: 0.9;' : '') + (note.current && ui.activePanel !== 'outline' && note.outline.length > 0 ? ' margin-left: 120px;' : '')"
+                                :style="'background-color: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-primary); min-width: 150px; max-width: 300px;' + (!note.current ? ' cursor: default; opacity: 0.9;' : '') + (note.current && ui.activePanel !== 'outline' && note.outline.length > 0 ? ' margin-left: 40px;' : '')"
                             >
                             <!-- Undo Button -->
                             <button 

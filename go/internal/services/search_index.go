@@ -996,7 +996,7 @@ func (si *SearchIndex) buildSearchResult(notePath string, content string, query 
 	pattern := regexp.MustCompile("(?i)" + escapedQuery)
 
 	matches := pattern.FindAllStringIndex(content, -1)
-	
+
 	var matchedLines []models.MatchContext
 	for i, match := range matches {
 		if i >= 3 { // Limit to 3 matches per file
@@ -1029,8 +1029,8 @@ func (si *SearchIndex) buildSearchResult(notePath string, content string, query 
 		})
 	}
 
-	// Extract note name from path
-	name := strings.TrimSuffix(filepath.Base(notePath), ".md")
+	// Extract the actual title from content
+	title := extractTitle(content, notePath)
 	folder := filepath.Dir(notePath)
 	if folder == "." {
 		folder = ""
@@ -1040,7 +1040,7 @@ func (si *SearchIndex) buildSearchResult(notePath string, content string, query 
 	fileType := getFileType(notePath)
 
 	return models.SearchResult{
-		Name:    name,
+		Name:    title,
 		Path:    notePath,
 		Folder:  folder,
 		Type:    fileType,

@@ -50,7 +50,7 @@ func TestSearchSingleMatch(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
-	assert.Equal(t, "note", results[0].Name)
+	assert.Equal(t, "My Note", results[0].Name)
 	assert.Equal(t, "note.md", results[0].Path)
 	assert.Len(t, results[0].Matches, 1)
 	assert.Contains(t, results[0].Matches[0].Context, "test")
@@ -75,9 +75,9 @@ func TestSearchMultipleFiles(t *testing.T) {
 	tmpDir := t.TempDir()
 	svc := NewSearchService(tmpDir)
 
-	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "note1.md"), []byte("keyword found here"), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "note2.md"), []byte("no match here"), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "note3.md"), []byte("also has keyword"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "note1.md"), []byte("# Note One\n\nkeyword found here"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "note2.md"), []byte("# Note Two\n\nno match here"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "note3.md"), []byte("# Note Three\n\nalso has keyword"), 0644))
 
 	results, err := svc.Search("keyword")
 
@@ -88,8 +88,8 @@ func TestSearchMultipleFiles(t *testing.T) {
 	for _, r := range results {
 		names[r.Name] = true
 	}
-	assert.True(t, names["note1"])
-	assert.True(t, names["note3"])
+	assert.True(t, names["Note One"])
+	assert.True(t, names["Note Three"])
 }
 
 func TestSearchCaseInsensitive(t *testing.T) {
@@ -224,7 +224,7 @@ func TestSearchEllipsis(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "end.md"), []byte("content with keyword"), 0644))
 
 	// Long content where keyword is in the middle - should have ellipsis
-	longContent := "this is a very long prefix text that should be truncated keyword and this is suffix text that should also be truncated"
+	longContent := "# Middle Note\n\nthis is a very long prefix text that should be truncated keyword and this is suffix text that should also be truncated"
 	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "middle.md"), []byte(longContent), 0644))
 
 	// Test that we find results
@@ -235,7 +235,7 @@ func TestSearchEllipsis(t *testing.T) {
 	// Find the result from middle.md
 	var foundMiddle bool
 	for _, r := range results {
-		if r.Name == "middle" {
+		if r.Name == "Middle Note" {
 			foundMiddle = true
 			// For the long content, there should be ellipsis
 			assert.Contains(t, r.Matches[0].Context, "...")

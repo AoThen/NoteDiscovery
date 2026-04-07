@@ -102,8 +102,10 @@ func (s *SearchService) Search(query string) ([]models.SearchResult, error) {
 		}
 
 		if len(matchedLines) > 0 {
+			// Extract the actual title from content
+			title := extractTitle(content, note.Path)
 			results = append(results, models.SearchResult{
-				Name:    note.Name,
+				Name:    title,
 				Path:    note.Path,
 				Folder:  note.Folder,
 				Type:    note.Type,
