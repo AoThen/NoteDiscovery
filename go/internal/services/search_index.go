@@ -451,6 +451,12 @@ func (si *SearchIndex) SearchByTitle(query string) ([]models.SearchResult, error
 		results = append(results, result)
 	}
 
+	// If no results from index, fall back to scanning all notes from disk
+	// This handles cases where the index might not be fully up-to-date
+	if len(results) == 0 {
+		return si.searchTitleFromDisk(query)
+	}
+
 	return results, nil
 }
 
@@ -521,8 +527,16 @@ func (si *SearchIndex) calculateTitleScore(title string, query string) float64 {
 		return score
 	}
 
-	// Fuzzy: count matched terms
+	// Fuzzy: count matched terms from tokenized query
 	queryTerms := tokenize(query)
+	if len(queryTerms) == 0 {
+		// For single-char queries, try direct containment
+		if strings.Contains(titleLower, query) {
+			score = 40.0
+		}
+		return score
+	}
+
 	matchedTerms := 0
 	for _, term := range queryTerms {
 		if strings.Contains(titleLower, term) {
@@ -534,6 +548,44 @@ func (si *SearchIndex) calculateTitleScore(title string, query string) float64 {
 	}
 
 	return score
+}
+
+// searchTitleFromDisk searches titles by scanning all notes from disk
+// Used as fallback when title index search returns no results
+func (si *SearchIndex) searchTitleFromDisk(query string) ([]models.SearchResult, error) {
+	// Use NoteService to scan all notes
+	notes, _, err := si.noteService.ScanNotes(false)
+	if err != nil {
+		return nil, err
+	}
+
+	queryLower := strings.ToLower(query)
+	var results []models.SearchResult
+
+	for _, note := range notes {
+		content, err := si.noteService.GetNoteContent(note.Path)
+		if err != nil {
+			continue
+		}
+
+		// Extract title from content
+		title := extractTitle(content, note.Path)
+		titleLower := strings.ToLower(title)
+
+		// Check if title contains the query (case-insensitive)
+		if strings.Contains(titleLower, queryLower) {
+			result := si.buildTitleResult(note.Path, title, query)
+			result.Score = si.calculateTitleScore(title, queryLower)
+			results = append(results, result)
+		}
+	}
+
+	// Sort by score descending
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Score > results[j].Score
+	})
+
+	return results, nil
 }
 
 // searchTitleByPrefix handles single-term or short prefix searches
@@ -578,6 +630,11 @@ func (si *SearchIndex) searchTitleByPrefix(prefix string) ([]models.SearchResult
 		result := si.buildTitleResult(m.notePath, m.title, prefix)
 		result.Score = m.score
 		results = append(results, result)
+	}
+
+	// If no results from index, fall back to scanning all notes from disk
+	if len(results) == 0 {
+		return si.searchTitleFromDisk(prefix)
 	}
 
 	return results, nil
@@ -670,6 +727,11 @@ func (si *SearchIndex) searchByTitleInternal(query string) ([]models.SearchResul
 		results = append(results, result)
 	}
 
+	// If no results from index, fall back to scanning all notes from disk
+	if len(results) == 0 {
+		return si.searchTitleFromDisk(query)
+	}
+
 	return results, nil
 }
 
@@ -713,6 +775,11 @@ func (si *SearchIndex) searchTitleByPrefixInternal(prefix string) ([]models.Sear
 		result := si.buildTitleResult(m.notePath, m.title, prefix)
 		result.Score = m.score
 		results = append(results, result)
+	}
+
+	// If no results from index, fall back to scanning all notes from disk
+	if len(results) == 0 {
+		return si.searchTitleFromDisk(prefix)
 	}
 
 	return results, nil

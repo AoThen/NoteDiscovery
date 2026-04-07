@@ -267,28 +267,185 @@ func TestSearchIndex_GetIndexSize(t *testing.T) {
 
 func TestSearchIndex_GetIndexedTerms(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create note
 	if err := os.WriteFile(filepath.Join(tempDir, "test.md"), []byte("alpha beta gamma"), 0644); err != nil {
 		t.Fatalf("Failed to write file: %v", err)
 	}
-	
+
 	ns := NewNoteService(tempDir)
 	si := NewSearchIndex(tempDir, ns)
 	si.BuildIndex()
-	
+
 	terms := si.GetIndexedTerms()
-	
+
 	// Check that expected terms are present
 	termMap := make(map[string]bool)
 	for _, term := range terms {
 		termMap[term] = true
 	}
-	
+
 	expectedTerms := []string{"alpha", "beta", "gamma"}
 	for _, expected := range expectedTerms {
 		if !termMap[expected] {
 			t.Errorf("Expected term %q not found in indexed terms", expected)
 		}
+	}
+}
+
+func TestSearchIndex_SearchByTitle(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create test notes with different titles
+	notes := map[string]string{
+		"golang-guide.md":     "# Golang Programming Guide\nThis is about Go language.",
+		"python-tutorial.md":  "# Python Tutorial for Beginners\nLearn Python basics.",
+		"database-notes.md":   "# Database Design Patterns\nSQL and NoSQL databases.",
+		"subdir/algorithms.md": "# Algorithm Analysis\nSorting and searching algorithms.",
+	}
+
+	for path, content := range notes {
+		fullPath := filepath.Join(tempDir, path)
+		if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+			t.Fatalf("Failed to create dir: %v", err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to write file: %v", err)
+		}
+	}
+
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	if err := si.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex failed: %v", err)
+	}
+
+	// Test 1: Search by exact title word
+	results, err := si.SearchByTitle("Golang")
+	if err != nil {
+		t.Fatalf("SearchByTitle failed: %v", err)
+	}
+	if len(results) == 0 {
+		t.Error("Expected to find results for 'Golang'")
+	} else if results[0].Name != "Golang Programming Guide" {
+		t.Errorf("Expected title 'Golang Programming Guide', got '%s'", results[0].Name)
+	}
+
+	// Test 2: Search by partial title (prefix match)
+	results, err = si.SearchByTitle("Python")
+	if err != nil {
+		t.Fatalf("SearchByTitle failed: %v", err)
+	}
+	if len(results) == 0 {
+		t.Error("Expected to find results for 'Python'")
+	}
+
+	// Test 3: Search with multiple words
+	results, err = si.SearchByTitle("Database Design")
+	if err != nil {
+		t.Fatalf("SearchByTitle failed: %v", err)
+	}
+	if len(results) == 0 {
+		t.Error("Expected to find results for 'Database Design'")
+	}
+
+	// Test 4: Case-insensitive search
+	results, err = si.SearchByTitle("golang")
+	if err != nil {
+		t.Fatalf("SearchByTitle failed: %v", err)
+	}
+	if len(results) == 0 {
+		t.Error("Expected case-insensitive search to work")
+	}
+
+	// Test 5: Search for non-existent title
+	results, err = si.SearchByTitle("NonExistent")
+	if err != nil {
+		t.Fatalf("SearchByTitle failed: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("Expected 0 results for non-existent title, got %d", len(results))
+	}
+}
+
+func TestSearchIndex_SearchByTitle_EmptyQuery(t *testing.T) {
+	tempDir := t.TempDir()
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+
+	results, err := si.SearchByTitle("")
+	if err != nil {
+		t.Fatalf("SearchByTitle failed: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("Expected 0 results for empty query, got %d", len(results))
+	}
+}
+
+func TestSearchIndex_SearchByTitle_FallbackToDisk(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create a note
+	notePath := filepath.Join(tempDir, "test-note.md")
+	content := "# My Special Title\nThis is some content."
+	if err := os.WriteFile(notePath, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to write file: %v", err)
+	}
+
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	
+	// Don't build index - test disk fallback
+	// Build empty index
+	si.BuildIndex()
+
+	// Search should still work via disk fallback
+	results, err := si.SearchByTitle("Special")
+	if err != nil {
+		t.Fatalf("SearchByTitle failed: %v", err)
+	}
+	if len(results) == 0 {
+		t.Error("Expected disk fallback to find results")
+	}
+}
+
+func TestSearchIndex_SearchSmart(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create test notes
+	notes := map[string]string{
+		"title-match.md":  "# Unique Title Word\nThis content has different words.",
+		"content-match.md": "# Other Note\nThis has unique content keyword here.",
+	}
+
+	for path, content := range notes {
+		fullPath := filepath.Join(tempDir, path)
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to write file: %v", err)
+		}
+	}
+
+	ns := NewNoteService(tempDir)
+	si := NewSearchIndex(tempDir, ns)
+	if err := si.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex failed: %v", err)
+	}
+
+	// Smart search should find title match first
+	results, err := si.SearchSmart("Title")
+	if err != nil {
+		t.Fatalf("SearchSmart failed: %v", err)
+	}
+	if len(results) == 0 {
+		t.Error("Expected SearchSmart to find title matches")
+	}
+
+	// Smart search should also find content matches
+	results, err = si.SearchSmart("content keyword")
+	if err != nil {
+		t.Fatalf("SearchSmart failed: %v", err)
+	}
+	if len(results) == 0 {
+		t.Error("Expected SearchSmart to find content matches")
 	}
 }
