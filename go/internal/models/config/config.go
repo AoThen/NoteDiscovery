@@ -166,6 +166,11 @@ func applyEnvOverrides(cfg *Config) {
 	}
 
 	// ========== 服务器配置 ==========
+	// HOST override
+	if v := os.Getenv("HOST"); v != "" {
+		cfg.Server.Host = v
+	}
+
 	// PORT override
 	if v := os.Getenv("PORT"); v != "" {
 		if port, err := strconv.Atoi(v); err == nil && port > 0 && port <= 65535 {

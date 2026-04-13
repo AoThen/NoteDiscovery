@@ -12,6 +12,11 @@ import (
 	"gonote/internal/models"
 )
 
+// Pre-compiled regex patterns for performance
+var (
+	cjkRegex = regexp.MustCompile(`[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]`)
+)
+
 // SearchIndex provides fast full-text search using inverted index
 // Uses double-buffering for non-blocking index rebuilds
 type SearchIndex struct {
@@ -249,8 +254,7 @@ func (si *SearchIndex) Search(query string) ([]models.SearchResult, error) {
 	}
 
 	// Check if query contains CJK characters - use phrase matching for CJK
-	cjkRE := regexp.MustCompile(`[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]`)
-	if cjkRE.MatchString(query) {
+	if cjkRegex.MatchString(query) {
 		return si.searchCJK(query)
 	}
 
@@ -791,8 +795,7 @@ func (si *SearchIndex) searchInternal(query string) ([]models.SearchResult, erro
 		return []models.SearchResult{}, nil
 	}
 
-	cjkRE := regexp.MustCompile(`[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]`)
-	if cjkRE.MatchString(query) {
+	if cjkRegex.MatchString(query) {
 		return si.searchCJKInternal(query)
 	}
 
@@ -1165,8 +1168,7 @@ func tokenize(text string) []string {
 	// CJK Unified Ideographs range: U+4E00 to U+9FFF
 	// CJK Unified Ideographs Extension A: U+3400 to U+4DBF
 	// CJK Compatibility Ideographs: U+F900 to U+FAFF
-	cjkRE := regexp.MustCompile(`[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]`)
-	cjkChars := cjkRE.FindAllString(text, -1)
+	cjkChars := cjkRegex.FindAllString(text, -1)
 	for _, char := range cjkChars {
 		if !termMap[char] {
 			termMap[char] = true

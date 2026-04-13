@@ -180,10 +180,12 @@ func (s *MediaService) FindOrphanedMedia() ([]string, error) {
 // collectAllMediaFiles scans all _attachments directories for media files
 func (s *MediaService) collectAllMediaFiles() ([]string, error) {
 	var mediaFiles []string
+	var walkErrors []string
 
 	err := filepath.WalkDir(s.notesDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return nil // Skip errors
+			walkErrors = append(walkErrors, fmt.Sprintf("WalkDir error at %s: %v", path, err))
+			return nil // Skip errors but log them
 		}
 
 		// Skip dot directories
@@ -226,16 +228,28 @@ func (s *MediaService) collectAllMediaFiles() ([]string, error) {
 		return nil
 	})
 
+	// Log walk errors if any
+	if len(walkErrors) > 0 {
+		for _, errMsg := range walkErrors[:min(len(walkErrors), 10)] {
+			logger.Printf("Warning: %s", errMsg)
+		}
+		if len(walkErrors) > 10 {
+			logger.Printf("Warning: ... and %d more walk errors", len(walkErrors)-10)
+		}
+	}
+
 	return mediaFiles, err
 }
 
 // collectReferencedMedia parses all notes and extracts media references
 func (s *MediaService) collectReferencedMedia() (map[string]bool, error) {
 	referenced := make(map[string]bool)
+	var walkErrors []string
 
 	err := filepath.WalkDir(s.notesDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return nil // Skip errors
+			walkErrors = append(walkErrors, fmt.Sprintf("WalkDir error at %s: %v", path, err))
+			return nil // Skip errors but log them
 		}
 
 		// Skip dot directories
@@ -363,6 +377,16 @@ func (s *MediaService) collectReferencedMedia() (map[string]bool, error) {
 
 		return nil
 	})
+
+	// Log walk errors if any
+	if len(walkErrors) > 0 {
+		for _, errMsg := range walkErrors[:min(len(walkErrors), 10)] {
+			logger.Printf("Warning: %s", errMsg)
+		}
+		if len(walkErrors) > 10 {
+			logger.Printf("Warning: ... and %d more walk errors", len(walkErrors)-10)
+		}
+	}
 
 	return referenced, err
 }

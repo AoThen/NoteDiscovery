@@ -55,7 +55,23 @@ func (s *ExportService) readLibFile(relPath string) string {
 	if s.libsDir == "" {
 		return ""
 	}
+	// Security: prevent path traversal
+	if strings.Contains(relPath, "..") || strings.HasPrefix(relPath, "/") || strings.HasPrefix(relPath, "\\") {
+		return ""
+	}
 	fullPath := filepath.Join(s.libsDir, relPath)
+	// Additional validation: ensure resolved path is within libsDir
+	absFullPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		return ""
+	}
+	absLibsDir, err := filepath.Abs(s.libsDir)
+	if err != nil {
+		return ""
+	}
+	if !strings.HasPrefix(absFullPath, absLibsDir) {
+		return ""
+	}
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		return ""

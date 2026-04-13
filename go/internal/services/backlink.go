@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+// Pre-compiled regex patterns for performance
+var (
+	backlinkWikilinkRegex = regexp.MustCompile(`\[\[([^\]|]+)(?:\|[^\]]+)?\]\]`)
+)
+
 // BacklinkService handles backlink discovery and wikilink updates
 type BacklinkService struct {
 	notesDir string
@@ -95,8 +100,7 @@ func (s *BacklinkService) extractWikilinksToNoteWithLines(content, noteName, not
 
 	for lineNum, line := range lines {
 		// Match wikilinks: [[link]] or [[link|display text]]
-		wikilinkPattern := regexp.MustCompile(`\[\[([^\]|]+)(?:\|[^\]]+)?\]\]`)
-		matches := wikilinkPattern.FindAllStringSubmatchIndex(line, -1)
+		matches := backlinkWikilinkRegex.FindAllStringSubmatchIndex(line, -1)
 
 		for _, match := range matches {
 			linkText := strings.TrimSpace(line[match[2]:match[3]])

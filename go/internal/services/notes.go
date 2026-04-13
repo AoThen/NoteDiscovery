@@ -129,10 +129,13 @@ func (s *NoteService) ScanNotes(includeMedia bool) ([]models.Note, []string, err
 func (s *NoteService) doScan(includeMedia bool) ([]models.Note, []string) {
 	var notes []models.Note
 	foldersSet := make(map[string]bool)
+	var walkErrors []string
 
 	filepath.WalkDir(s.notesDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return nil // Skip errors
+			// Log walk errors instead of silently ignoring
+			walkErrors = append(walkErrors, fmt.Sprintf("WalkDir error at %s: %v", path, err))
+			return nil // Continue walking despite errors
 		}
 
 		// Skip dot directories
@@ -201,6 +204,16 @@ func (s *NoteService) doScan(includeMedia bool) ([]models.Note, []string) {
 
 		return nil
 	})
+
+	// Log walk errors if any
+	if len(walkErrors) > 0 {
+		for _, errMsg := range walkErrors[:min(len(walkErrors), 10)] {
+			fmt.Printf("Warning: %s\n", errMsg)
+		}
+		if len(walkErrors) > 10 {
+			fmt.Printf("Warning: ... and %d more walk errors\n", len(walkErrors)-10)
+		}
+	}
 
 	// Sort notes by modified date (newest first)
 	sort.Slice(notes, func(i, j int) bool {
@@ -343,7 +356,13 @@ func (s *NoteService) GetNoteMetadata(notePath string) (*models.NoteMetadata, er
 	if err != nil {
 		return nil, err
 	}
-	lineCount := bytes.Count(content, []byte("\n")) + 1
+	// Handle empty file case: 0 bytes = 0 lines
+	var lineCount int
+	if len(content) == 0 {
+		lineCount = 0
+	} else {
+		lineCount = bytes.Count(content, []byte("\n")) + 1
+	}
 
 	return &models.NoteMetadata{
 		Created:  info.ModTime().UTC().Format(time.RFC3339), // Using ModTime as creation time
@@ -565,19 +584,19 @@ func (s *NoteService) StopCacheCleanup() {
 // StartBackgroundScanner starts the background note scanner.
 // It performs an initial scan immediately, then scans periodically.
 // API requests will block until the first scan completes.
+// If a panic occurs, the scanner will automatically restart after a delay.
 func (s *NoteService) StartBackgroundScanner() {
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				// Log the panic and restart the scanner after a delay
-				fmt.Printf("Background scanner panic recovered: %v\n", r)
-				// Note: After a panic, the scanner will not restart automatically.
-				// The application will continue to work, but background scans will stop.
-			}
+		// Initial scan with panic recovery
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Printf("Background scanner panic recovered: %v\n", r)
+				}
+			}()
+			s.performScan()
+			close(s.ready) // Signal that first scan is complete
 		}()
-		// Initial scan
-		s.performScan()
-		close(s.ready) // Signal that first scan is complete
 
 		ticker := time.NewTicker(s.scanInterval)
 		defer ticker.Stop()
@@ -587,11 +606,27 @@ func (s *NoteService) StartBackgroundScanner() {
 			case <-s.stopScanner:
 				return
 			case <-s.scanTrigger:
-				// Immediate scan triggered
-				s.performScan()
+				// Immediate scan with panic recovery
+				func() {
+					defer func() {
+						if r := recover(); r != nil {
+							fmt.Printf("Background scanner panic recovered during scheduled scan: %v\n", r)
+							// Continue running - don't let one panic stop the scanner
+						}
+					}()
+					s.performScan()
+				}()
 			case <-ticker.C:
-				// Periodic scan
-				s.performScan()
+				// Periodic scan with panic recovery
+				func() {
+					defer func() {
+						if r := recover(); r != nil {
+							fmt.Printf("Background scanner panic recovered during scheduled scan: %v\n", r)
+							// Continue running - don't let one panic stop the scanner
+						}
+					}()
+					s.performScan()
+				}()
 			}
 		}
 	}()
